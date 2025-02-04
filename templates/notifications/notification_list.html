@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notifications - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="notifications-container">
+    <div class="notifications-header">
+        <h1>Notifications</h1>
+        {% if notifications %}
+            <button class="btn btn-outline-primary" id="markAllRead">
+                Mark All as Read
+            </button>
+        {% endif %}
+    </div>
+
+    <div class="notifications-list">
+        {% for notification in notifications %}
+            <div class="notification-item {% if not notification.read_at %}unread{% endif %}" 
+                 data-notification-id="{{ notification.id }}">
+                <div class="notification-icon">
+                    {% if notification.type == 'campaign' %}
+                        <i class="fas fa-bullhorn"></i>
+                    {% elif notification.type == 'contract' %}
+                        <i class="fas fa-file-signature"></i>
+                    {% elif notification.type == 'payment' %}
+                        <i class="fas fa-dollar-sign"></i>
+                    {% elif notification.type == 'content' %}
+                        <i class="fas fa-photo-video"></i>
+                    {% else %}
+                        <i class="fas fa-bell"></i>
+                    {% endif %}
+                </div>
+                
+                <div class="notification-content">
+                    <div class="notification-message">
+                        {{ notification.message }}
+                    </div>
+                    <div class="notification-meta">
+                        <span class="timestamp">
+                            {{ notification.created_at|timesince }} ago
+                        </span>
+                        {% if not notification.read_at %}
+                            <button class="btn btn-sm btn-link mark-read-btn">
+                                Mark as read
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if notification.url %}
+                    <a href="{{ notification.url }}" class="notification-link">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="no-notifications">
+                <img src="{% static 'images/no-notifications.svg' %}" 
+                     alt="No notifications">
+                <h3>No Notifications</h3>
+                <p>You're all caught up!</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+        <nav aria-label="Notifications navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                            Previous
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                            Next
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mark single notification as read
+    document.querySelectorAll('.mark-read-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const notificationItem = this.closest('.notification-item');
+            const notificationId = notificationItem.dataset.notificationId;
+            
+            fetch(`/notifications/${notificationId}/mark-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    notificationItem.classList.remove('unread');
+                    this.remove();
+                    updateUnreadCount();
+                }
+            });
+        });
+    });
+
+    // Mark all notifications as read
+    const markAllBtn = document.getElementById('markAllRead');
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function() {
+            fetch('/notifications/mark-all-read/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.querySelectorAll('.notification-item.unread').forEach(item => {
+                        item.classList.remove('unread');
+                        item.querySelector('.mark-read-btn')?.remove();
+                    });
+                    updateUnreadCount();
+                }
+            });
+        });
+    }
+
+    // Update unread count in navbar
+    function updateUnreadCount() {
+        fetch('/notifications/unread-count/')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.querySelector('.notifications-badge');
+                if (badge) {
+                    badge.textContent = data.count;
+                    if (data.count === 0) {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ campaign.title }} - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="campaign-detail-container">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Campaign Details -->
+            <div class="campaign-header">
+                <h1>{{ campaign.title }}</h1>
+                {% if user == campaign.creator %}
+                    <div class="campaign-actions">
+                        <a href="{% url 'campaigns:update' campaign.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> Edit Campaign
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="campaign-content">
+                <div class="section">
+                    <h3>Description</h3>
+                    <p>{{ campaign.description|linebreaks }}</p>
+                </div>
+
+                <div class="section">
+                    <h3>Requirements</h3>
+                    <p>{{ campaign.requirements|linebreaks }}</p>
+                </div>
+
+                <div class="section">
+                    <h3>Deliverables</h3>
+                    <ul class="deliverables-list">
+                        {% for item in campaign.deliverables.items %}
+                            <li>
+                                <i class="fas fa-check"></i>
+                                <span>{{ item.0 }}: {{ item.1 }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="section">
+                    <h3>Target Metrics</h3>
+                    <div class="metrics-grid">
+                        {% for metric, value in campaign.target_metrics.items %}
+                            <div class="metric-card">
+                                <span class="metric-label">{{ metric|title }}</span>
+                                <span class="metric-value">{{ value }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Campaign Sidebar -->
+            <div class="campaign-sidebar">
+                <div class="info-card">
+                    <div class="info-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <div>
+                            <label>Budget</label>
+                            <span>${{ campaign.budget }}</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-calendar"></i>
+                        <div>
+                            <label>Deadline</label>
+                            <span>{{ campaign.deadline }}</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-globe"></i>
+                        <div>
+                            <label>Platforms</label>
+                            <div class="platforms-list">
+                                {% for platform in campaign.platforms.all %}
+                                    <span class="platform-badge">
+                                        <i class="fab fa-{{ platform.icon }}"></i>
+                                        {{ platform.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if user.user_type == 'influencer' and not has_applied %}
+                    <div class="application-card">
+                        <h3>Apply for this Campaign</h3>
+                        <form method="post" action="{% url 'campaigns:apply' campaign.pk %}">
+                            {% csrf_token %}
+                            {{ application_form.as_p }}
+                            <button type="submit" class="btn btn-primary w-100">Submit Application</button>
+                        </form>
+                    </div>
+                {% elif has_applied %}
+                    <div class="application-status-card">
+                        <h3>Application Status</h3>
+                        <div class="status {{ campaign.applications.get.status }}">
+                            {{ campaign.applications.get.get_status_display }}
+                        </div>
+                        <p class="application-date">
+                            Applied on {{ campaign.applications.get.created_at|date }}
+                        </p>
+                    </div>
+                {% endif %}
+
+                {% if user == campaign.creator %}
+                    <div class="applications-card">
+                        <h3>Applications ({{ applications.count }})</h3>
+                        {% for application in applications %}
+                            <div class="application-item">
+                                <div class="applicant-info">
+                                    <img src="{{ application.influencer.profile_picture.url }}" 
+                                         alt="{{ application.influencer.username }}">
+                                    <div>
+                                        <h4>{{ application.influencer.get_full_name }}</h4>
+                                        <span>@{{ application.influencer.username }}</span>
+                                    </div>
+                                </div>
+                                <p class="proposal">{{ application.proposal }}</p>
+                                <div class="application-actions">
+                                    <form method="post" 
+                                          action="{% url 'campaigns:update_application' campaign.pk application.id %}">
+                                        {% csrf_token %}
+                                        {% if application.status == 'pending' %}
+                                            <button type="submit" name="status" value="accepted" 
+                                                    class="btn btn-success btn-sm">Accept</button>
+                                            <button type="submit" name="status" value="rejected" 
+                                                    class="btn btn-danger btn-sm">Reject</button>
+                                        {% else %}
+                                            <span class="status-badge {{ application.status }}">
+                                                {{ application.get_status_display }}
+                                            </span>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="no-applications">No applications yet</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

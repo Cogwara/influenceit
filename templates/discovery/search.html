@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Discover Influencers - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="discovery-container">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-md-3">
+            <div class="filters-card">
+                <h3>Filters</h3>
+                <form method="get" id="searchForm">
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    {% if user.is_authenticated %}
+                        <button type="button" class="btn btn-outline-primary w-100 mt-2" 
+                                data-bs-toggle="modal" data-bs-target="#saveFilterModal">
+                            Save Filter
+                        </button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="col-md-9">
+            <div class="results-header d-flex justify-content-between align-items-center">
+                <h2>{{ influencers.count }} Influencers Found</h2>
+                <div class="sort-options">
+                    <select class="form-select" id="sortOrder">
+                        <option value="followers">Sort by Followers</option>
+                        <option value="engagement">Sort by Engagement</option>
+                        <option value="relevance">Sort by Relevance</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="influencer-grid">
+                {% for influencer in influencers %}
+                    <div class="influencer-card">
+                        <div class="profile-header">
+                            <img src="{{ influencer.user.profile_picture.url }}" alt="{{ influencer.user.username }}">
+                            <div class="profile-info">
+                                <h4>{{ influencer.user.get_full_name }}</h4>
+                                <p>@{{ influencer.user.username }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="metrics">
+                            <div class="metric">
+                                <span class="label">Followers</span>
+                                <span class="value">{{ influencer.metrics.followers|intcomma }}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="label">Engagement</span>
+                                <span class="value">{{ influencer.metrics.engagement_rate }}%</span>
+                            </div>
+                        </div>
+
+                        <div class="platforms">
+                            {% for platform in influencer.platforms.all %}
+                                <span class="platform-badge">
+                                    <i class="fab fa-{{ platform.icon }}"></i>
+                                    {{ platform.name }}
+                                </span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="card-actions">
+                            <a href="{% url 'users:influencer_profile' influencer.user.username %}" 
+                               class="btn btn-outline-primary">View Profile</a>
+                            {% if user.is_authenticated and user.user_type == 'seeker' %}
+                                <button class="btn btn-primary" data-bs-toggle="modal" 
+                                        data-bs-target="#addToListModal" 
+                                        data-influencer-id="{{ influencer.user.id }}">
+                                    Add to List
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="no-results">
+                        <img src="{% static 'images/no-results.svg' %}" alt="No results found">
+                        <h3>No influencers found</h3>
+                        <p>Try adjusting your filters to see more results</p>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if is_paginated %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Save Filter Modal -->
+<div class="modal fade" id="saveFilterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Save Filter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'discovery:save_filter' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="filterName" class="form-label">Filter Name</label>
+                        <input type="text" class="form-control" id="filterName" name="name" required>
+                    </div>
+                    <input type="hidden" name="criteria" id="filterCriteria">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add to List Modal -->
+<div class="modal fade" id="addToListModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add to List</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'discovery:add_to_list' 0 %}" id="addToListForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select List</label>
+                        <select class="form-select" name="list_id" required>
+                            {% for list in user.influencer_lists.all %}
+                                <option value="{{ list.id }}">{{ list.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add to List</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle sort order changes
+    document.getElementById('sortOrder').addEventListener('change', function() {
+        document.getElementById('searchForm').submit();
+    });
+
+    // Handle save filter
+    document.getElementById('saveFilterModal').addEventListener('show.bs.modal', function() {
+        const formData = new FormData(document.getElementById('searchForm'));
+        const criteria = {};
+        for (let [key, value] of formData.entries()) {
+            criteria[key] = value;
+        }
+        document.getElementById('filterCriteria').value = JSON.stringify(criteria);
+    });
+
+    // Handle add to list
+    document.getElementById('addToListModal').addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const influencerId = button.getAttribute('data-influencer-id');
+        const form = document.getElementById('addToListForm');
+        form.action = form.action.replace('/0/', `/${influencerId}/`);
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Content Details - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="content-detail-container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2>Content Details</h2>
+                        <div class="content-status {{ content.status }}">
+                            {{ content.get_status_display }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="content-preview">
+                        <div class="platform-icon">
+                            {% if content.type == 'instagram' %}
+                                <i class="fab fa-instagram"></i>
+                            {% elif content.type == 'youtube' %}
+                                <i class="fab fa-youtube"></i>
+                            {% elif content.type == 'tiktok' %}
+                                <i class="fab fa-tiktok"></i>
+                            {% endif %}
+                        </div>
+                        <a href="{{ content.url }}" target="_blank" class="btn btn-primary">
+                            View Content on {{ content.get_type_display }}
+                        </a>
+                    </div>
+
+                    <div class="content-info mt-4">
+                        <h3>Campaign Information</h3>
+                        <table class="table">
+                            <tr>
+                                <th>Campaign:</th>
+                                <td>{{ content.campaign.title }}</td>
+                            </tr>
+                            <tr>
+                                <th>Created By:</th>
+                                <td>{{ content.creator.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Submitted:</th>
+                                <td>{{ content.created_at }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="content-caption mt-4">
+                        <h3>Caption/Description</h3>
+                        <div class="caption-text">
+                            {{ content.caption|linebreaks }}
+                        </div>
+                    </div>
+
+                    {% if content.metrics %}
+                        <div class="content-metrics mt-4">
+                            <h3>Performance Metrics</h3>
+                            <div class="metrics-grid">
+                                {% for key, value in content.metrics.items %}
+                                    <div class="metric-card">
+                                        <span class="metric-label">{{ key|title }}</span>
+                                        <span class="metric-value">{{ value }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <a href="{% url 'content:analytics' content.id %}" class="btn btn-outline-primary mt-3">
+                                View Detailed Analytics
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    {% if user == content.creator and content.status != 'approved' %}
+                        <div class="content-actions mt-4">
+                            <a href="{% url 'content:update' content.id %}" class="btn btn-primary">
+                                Edit Content
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Reviews Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Reviews</h3>
+                </div>
+                <div class="card-body">
+                    {% if user == content.campaign.creator and content.status == 'pending' %}
+                        <form method="post" action="{% url 'content:review' content.id %}" id="reviewForm">
+                            {% csrf_token %}
+                            {{ review_form.as_p }}
+                            <button type="submit" class="btn btn-primary w-100">
+                                Submit Review
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <div class="reviews-list mt-4">
+                        {% for review in reviews %}
+                            <div class="review-item">
+                                <div class="review-header">
+                                    <span class="reviewer">{{ review.reviewer.get_full_name }}</span>
+                                    <span class="date">{{ review.created_at|date }}</span>
+                                </div>
+                                <div class="review-status {{ review.status }}">
+                                    {{ review.get_status_display }}
+                                </div>
+                                <div class="review-feedback">
+                                    {{ review.feedback|linebreaks }}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-center text-muted">No reviews yet</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reviewForm = document.getElementById('reviewForm');
+    
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Add new review to list
+                    const reviewsList = document.querySelector('.reviews-list');
+                    const reviewHtml = `
+                        <div class="review-item">
+                            <div class="review-header">
+                                <span class="reviewer">{{ user.get_full_name }}</span>
+                                <span class="date">${data.review.created_at}</span>
+                            </div>
+                            <div class="review-status ${data.review.status.toLowerCase()}">
+                                ${data.review.status}
+                            </div>
+                            <div class="review-feedback">
+                                ${data.review.feedback}
+                            </div>
+                        </div>
+                    `;
+                    reviewsList.innerHTML = reviewHtml + reviewsList.innerHTML;
+                    
+                    // Clear form
+                    reviewForm.reset();
+                    
+                    // Reload page to update status
+                    window.location.reload();
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

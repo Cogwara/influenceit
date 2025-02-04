@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="conversation-container">
+    <!-- Conversation Header -->
+    <div class="conversation-header">
+        {% with other_participant=conversation.get_other_participant.user %}
+            <div class="participant-info">
+                <img src="{{ other_participant.profile_picture.url }}" 
+                     alt="{{ other_participant.get_full_name }}" class="avatar">
+                <div class="info">
+                    <h3>{{ other_participant.get_full_name }}</h3>
+                    {% if other_participant.is_online %}
+                        <span class="online-status">Online</span>
+                    {% else %}
+                        <span class="last-seen">
+                            Last seen {{ other_participant.last_login|timesince }} ago
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endwith %}
+    </div>
+
+    <!-- Messages Area -->
+    <div class="messages-container" id="messagesContainer">
+        {% for message in conversation.messages.all %}
+            <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                <div class="message-content">
+                    {{ message.content }}
+                    <span class="message-time">
+                        {{ message.timestamp|date:"g:i A" }}
+                        {% if message.sender == request.user %}
+                            {% if message.read_by.all %}
+                                <i class="fas fa-check-double text-primary"></i>
+                            {% else %}
+                                <i class="fas fa-check"></i>
+                            {% endif %}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Message Input -->
+    <div class="message-input">
+        <form method="post" id="messageForm">
+            {% csrf_token %}
+            <div class="input-group">
+                {{ form.content }}
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageForm = document.getElementById('messageForm');
+    
+    // Scroll to bottom of messages
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    scrollToBottom();
+    
+    // Handle message submission
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Add new message to container
+                const messageHtml = `
+                    <div class="message sent">
+                        <div class="message-content">
+                            ${data.message.content}
+                            <span class="message-time">
+                                ${data.message.timestamp}
+                                <i class="fas fa-check"></i>
+                            </span>
+                        </div>
+                    </div>
+                `;
+                messagesContainer.innerHTML += messageHtml;
+                scrollToBottom();
+                
+                // Clear input
+                messageForm.reset();
+            }
+        });
+    });
+    
+    // Real-time updates
+    const conversationId = {{ conversation.id }};
+    const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const chatSocket = new WebSocket(
+        `${ws_scheme}://${window.location.host}/ws/chat/${conversationId}/`
+    );
+    
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'chat_message' && data.sender !== {{ request.user.id }}) {
+            const messageHtml = `
+                <div class="message received">
+                    <div class="message-content">
+                        ${data.message}
+                        <span class="message-time">${data.timestamp}</span>
+                    </div>
+                </div>
+            `;
+            messagesContainer.innerHTML += messageHtml;
+            scrollToBottom();
+        }
+    };
+});
+</script>
+{% endblock %} 

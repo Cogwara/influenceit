@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Failed - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-circle text-danger" style="font-size: 4rem;"></i>
+                    </div>
+                    <h2 class="card-title text-danger mb-4">Payment Failed</h2>
+                    <p class="card-text">
+                        We're sorry, but there was an error processing your payment.
+                        {% if error_message %}
+                            <br>
+                            <strong>Error: {{ error_message }}</strong>
+                        {% endif %}
+                    </p>
+
+                    <div class="mt-4">
+                        <a href="{% url 'payments:process' %}" class="btn btn-primary me-2">
+                            Try Again
+                        </a>
+                        <a href="{% url 'support:contact' %}" class="btn btn-outline-primary">
+                            Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Common Issues -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Common Issues</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-credit-card text-muted me-2"></i>
+                            Insufficient funds in your account
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-lock text-muted me-2"></i>
+                            Card security code (CVV) was incorrect
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-globe text-muted me-2"></i>
+                            International transactions may be blocked
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-clock text-muted me-2"></i>
+                            Card expiration date may be incorrect
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Troubleshooting Steps -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Troubleshooting Steps</h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">Verify your card information is correct</li>
+                        <li class="mb-2">Ensure you have sufficient funds</li>
+                        <li class="mb-2">Check if your card allows online transactions</li>
+                        <li class="mb-2">Try using a different payment method</li>
+                        <li>Contact your bank if the issue persists</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Support Information -->
+            <div class="alert alert-info mt-4">
+                <h6 class="alert-heading">Need Assistance?</h6>
+                <p class="mb-0">
+                    Our support team is here to help! Contact us at:
+                    <br>
+                    Email: <a href="mailto:support@influenceit.com">support@influenceit.com</a>
+                    <br>
+                    Phone: <a href="tel:+1234567890">+1 (234) 567-890</a>
+                    <br>
+                    Hours: Monday-Friday, 9AM-5PM EST
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

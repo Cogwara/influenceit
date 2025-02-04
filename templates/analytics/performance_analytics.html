@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Performance Analytics - InfluenceIt{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+<style>
+    .metric-card {
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Time Period Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="d-flex align-items-center">
+                        <label class="me-3">Time Period:</label>
+                        <select name="period" class="form-select me-3" style="width: auto;" onchange="this.form.submit()">
+                            <option value="7" {% if selected_period == '7' %}selected{% endif %}>Last 7 days</option>
+                            <option value="30" {% if selected_period == '30' %}selected{% endif %}>Last 30 days</option>
+                            <option value="90" {% if selected_period == '90' %}selected{% endif %}>Last 90 days</option>
+                            <option value="180" {% if selected_period == '180' %}selected{% endif %}>Last 6 months</option>
+                            <option value="365" {% if selected_period == '365' %}selected{% endif %}>Last year</option>
+                        </select>
+                        <span class="text-muted">
+                            {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}
+                        </span>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card metric-card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Campaigns</h6>
+                    <h2 class="mb-0">{{ metrics.total_campaigns }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card metric-card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Contracts</h6>
+                    <h2 class="mb-0">{{ metrics.total_contracts }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card metric-card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Content</h6>
+                    <h2 class="mb-0">{{ metrics.total_content }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card metric-card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Reach</h6>
+                    <h2 class="mb-0">{{ metrics.total_reach|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card metric-card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Engagement</h6>
+                    <h2 class="mb-0">{{ metrics.total_engagement|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card metric-card bg-secondary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Avg Engagement Rate</h6>
+                    <h2 class="mb-0">{{ metrics.avg_engagement_rate|floatformat:2 }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row mb-4">
+        <!-- Monthly Trends -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Monthly Trends</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="monthlyTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Performance -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Weekly Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="weeklyPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform & Campaign Performance -->
+    <div class="row">
+        <!-- Platform Performance -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Platform Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Platform</th>
+                                    <th>Content</th>
+                                    <th>Views</th>
+                                    <th>Engagement</th>
+                                    <th>Eng. Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for platform in platform_performance %}
+                                <tr>
+                                    <td>{{ platform.platform }}</td>
+                                    <td>{{ platform.content_count }}</td>
+                                    <td>{{ platform.total_views|intcomma }}</td>
+                                    <td>{{ platform.total_engagement|intcomma }}</td>
+                                    <td>{{ platform.avg_engagement_rate|floatformat:2 }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campaign Performance -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Campaign Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Campaign</th>
+                                    <th>Content</th>
+                                    <th>Views</th>
+                                    <th>Engagement</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for campaign in campaign_performance %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'campaigns:detail' campaign.pk %}">
+                                            {{ campaign.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ campaign.content_count }}</td>
+                                    <td>{{ campaign.total_views|default:0|intcomma }}</td>
+                                    <td>{{ campaign.total_engagement|default:0|intcomma }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+// Monthly Trends Chart
+const monthlyCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
+new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+        labels: [{% for trend in monthly_trends %}'{{ trend.month|date:"M Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Views',
+            data: [{% for trend in monthly_trends %}{{ trend.total_views|default:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: 'rgba(54, 162, 235, 1)',
+            tension: 0.1
+        }, {
+            label: 'Engagement',
+            data: [{% for trend in monthly_trends %}{{ trend.total_engagement|default:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: 'rgba(255, 99, 132, 1)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Weekly Performance Chart
+const weeklyCtx = document.getElementById('weeklyPerformanceChart').getContext('2d');
+new Chart(weeklyCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for perf in weekly_performance %}'Week {{ forloop.counter }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Content',
+            data: [{% for perf in weekly_performance %}{{ perf.content_count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 

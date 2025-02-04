@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Methods - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="payment-methods-container">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2>Payment Methods</h2>
+            <a href="{% url 'payments:add_payment_method' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Payment Method
+            </a>
+        </div>
+        <div class="card-body">
+            {% if payment_methods %}
+                <div class="payment-methods-list">
+                    {% for method in payment_methods %}
+                        <div class="payment-method-item">
+                            <div class="card-info">
+                                <i class="fab fa-cc-{{ method.card_brand|lower }}"></i>
+                                <span>•••• {{ method.card_last4 }}</span>
+                                <span class="expiry">
+                                    Expires {{ method.exp_month }}/{{ method.exp_year }}
+                                </span>
+                            </div>
+                            <div class="actions">
+                                <form method="post" 
+                                      action="{% url 'payments:remove_payment_method' method.id %}"
+                                      onsubmit="return confirm('Are you sure you want to remove this payment method?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-payment-methods text-center py-5">
+                    <img src="{% static 'images/no-payment-methods.svg' %}" alt="No payment methods">
+                    <h3>No Payment Methods Added</h3>
+                    <p>Add a payment method to start making payments to influencers</p>
+                    <a href="{% url 'payments:add_payment_method' %}" class="btn btn-primary mt-3">
+                        Add Payment Method
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

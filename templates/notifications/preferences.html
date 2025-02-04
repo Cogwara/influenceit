@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notification Preferences - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="preferences-container">
+    <div class="card">
+        <div class="card-header">
+            <h2>Notification Preferences</h2>
+        </div>
+        <div class="card-body">
+            <form id="preferencesForm">
+                {% csrf_token %}
+                
+                <div class="preferences-section">
+                    <h3>Campaign Notifications</h3>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="campaign_updates" name="campaign_updates"
+                               {% if preferences.campaign_updates %}checked{% endif %}>
+                        <label class="form-check-label" for="campaign_updates">
+                            Campaign status updates
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="new_applications" name="new_applications"
+                               {% if preferences.new_applications %}checked{% endif %}>
+                        <label class="form-check-label" for="new_applications">
+                            New campaign applications
+                        </label>
+                    </div>
+                </div>
+
+                <div class="preferences-section">
+                    <h3>Contract Notifications</h3>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="contract_updates" name="contract_updates"
+                               {% if preferences.contract_updates %}checked{% endif %}>
+                        <label class="form-check-label" for="contract_updates">
+                            Contract status changes
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="contract_signatures" name="contract_signatures"
+                               {% if preferences.contract_signatures %}checked{% endif %}>
+                        <label class="form-check-label" for="contract_signatures">
+                            Contract signature requests
+                        </label>
+                    </div>
+                </div>
+
+                <div class="preferences-section">
+                    <h3>Payment Notifications</h3>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="payment_updates" name="payment_updates"
+                               {% if preferences.payment_updates %}checked{% endif %}>
+                        <label class="form-check-label" for="payment_updates">
+                            Payment status updates
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="payment_reminders" name="payment_reminders"
+                               {% if preferences.payment_reminders %}checked{% endif %}>
+                        <label class="form-check-label" for="payment_reminders">
+                            Payment due reminders
+                        </label>
+                    </div>
+                </div>
+
+                <div class="preferences-section">
+                    <h3>Content Notifications</h3>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="content_reviews" name="content_reviews"
+                               {% if preferences.content_reviews %}checked{% endif %}>
+                        <label class="form-check-label" for="content_reviews">
+                            Content review updates
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="content_deadlines" name="content_deadlines"
+                               {% if preferences.content_deadlines %}checked{% endif %}>
+                        <label class="form-check-label" for="content_deadlines">
+                            Content deadline reminders
+                        </label>
+                    </div>
+                </div>
+
+                <div class="preferences-section">
+                    <h3>Email Notifications</h3>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="email_notifications" name="email_notifications"
+                               {% if preferences.email_notifications %}checked{% endif %}>
+                        <label class="form-check-label" for="email_notifications">
+                            Receive email notifications
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-4">
+                    Save Preferences
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('preferencesForm');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('/notifications/preferences/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success mt-3';
+                alert.textContent = 'Preferences saved successfully!';
+                form.appendChild(alert);
+                
+                // Remove alert after 3 seconds
+                setTimeout(() => {
+                    alert.remove();
+                }, 3000);
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

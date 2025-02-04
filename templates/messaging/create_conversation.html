@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Message - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="create-conversation-container">
+    <div class="card">
+        <div class="card-header">
+            <h2>Start New Conversation</h2>
+        </div>
+        <div class="card-body">
+            <div class="search-box mb-4">
+                <input type="text" class="form-control" id="recipientSearch" 
+                       placeholder="Search for users...">
+            </div>
+
+            <form method="post" id="createConversationForm">
+                {% csrf_token %}
+                <div class="recipients-list">
+                    {% for recipient in recipients %}
+                        <div class="recipient-item">
+                            <div class="recipient-info">
+                                <img src="{{ recipient.profile_picture.url }}" 
+                                     alt="{{ recipient.get_full_name }}" class="avatar">
+                                <div class="info">
+                                    <h4>{{ recipient.get_full_name }}</h4>
+                                    <p>{{ recipient.get_user_type_display }}</p>
+                                </div>
+                            </div>
+                            <button type="submit" name="recipient" value="{{ recipient.id }}" 
+                                    class="btn btn-primary btn-sm">
+                                Message
+                            </button>
+                        </div>
+                    {% empty %}
+                        <div class="no-recipients">
+                            <p>No users found</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('recipientSearch');
+    const recipientsList = document.querySelector('.recipients-list');
+    
+    searchInput.addEventListener('input', function() {
+        const searchText = this.value.toLowerCase();
+        
+        document.querySelectorAll('.recipient-item').forEach(item => {
+            const name = item.querySelector('h4').textContent.toLowerCase();
+            const type = item.querySelector('p').textContent.toLowerCase();
+            
+            if (name.includes(searchText) || type.includes(searchText)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

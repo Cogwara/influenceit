@@ -1,0 +1,41 @@
+<!-- filepath: /C:/Users/user/OneDrive/Documents/Project/influenceit/templates/users/influencer_profile.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<h2>{{ user.username }}'s Profile</h2>
+{% if profile.profile_picture %}
+    <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" width="150" height="150">
+{% else %}
+    <p>No profile picture available.</p>
+{% endif %}
+<p><strong>Full Name:</strong> {{ profile.full_name }}</p>
+<p><strong>Bio:</strong> {{ profile.bio }}</p>
+<p><strong>Website:</strong> <a href="{{ profile.website }}">{{ profile.website }}</a></p>
+<h3>Social Media Links</h3>
+<ul>
+    {% for platform, link in profile.social_media_links.items %}
+        <li><a href="{{ link }}">{{ platform }}</a></li>
+    {% endfor %}
+</ul>
+<p><strong>Follower Count:</strong> {{ profile.follower_count }}</p>
+<p><strong>Engagement Rate:</strong> {{ profile.engagement_rate }}%</p>
+<h3>Audience Insights</h3>
+<p><strong>Demographics:</strong> {{ profile.audience_demographics }}</p>
+<p><strong>Interests & Behaviors:</strong> {{ profile.audience_interests }}</p>
+<p><strong>Audience Authenticity Score:</strong> {{ profile.audience_authenticity_score }}</p>
+<h3>Content & Niche</h3>
+<p><strong>Primary Niche:</strong> {{ profile.primary_niche }}</p>
+<p><strong>Content Types:</strong> {{ profile.content_types }}</p>
+<h3>Collaboration Preferences</h3>
+<p><strong>Brand Collaboration History:</strong> {{ profile.brand_collaboration_history }}</p>
+<p><strong>Preferred Payment Model:</strong> {{ profile.preferred_payment_model }}</p>
+<h3>Pricing & Availability</h3>
+<p><strong>Rate Card:</strong> {{ profile.rate_card }}</p>
+<p><strong>Availability:</strong> {{ profile.availability }}</p>
+<h3>Performance Analytics</h3>
+<p><strong>Post Reach:</strong> {{ profile.post_reach }}</p>
+<p><strong>Impressions:</strong> {{ profile.impressions }}</p>
+<p><strong>Engagement Metrics:</strong> {{ profile.engagement_metrics }}</p>
+{% endblock %}

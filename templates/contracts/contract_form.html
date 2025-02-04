@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}Edit{% else %}Create{% endif %} Contract
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .json-error {
+        color: red;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Contract</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" id="contractForm">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ field.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.name == 'payment_schedule' %}
+                            <div class="json-error" id="jsonError"></div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}Update{% else %}Create{% endif %} Contract
+                    </button>
+                    <a href="{% url 'contracts:list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentScheduleField = document.querySelector('#id_payment_schedule');
+    const jsonError = document.querySelector('#jsonError');
+    
+    function validateJSON(value) {
+        try {
+            if (value.trim() === '') return true;
+            JSON.parse(value);
+            jsonError.textContent = '';
+            return true;
+        } catch (e) {
+            jsonError.textContent = 'Invalid JSON format';
+            return false;
+        }
+    }
+    
+    function formatJSON() {
+        try {
+            const value = paymentScheduleField.value.trim();
+            if (value === '') return;
+            const parsed = JSON.parse(value);
+            paymentScheduleField.value = JSON.stringify(parsed, null, 4);
+            jsonError.textContent = '';
+        } catch (e) {
+            jsonError.textContent = 'Invalid JSON format';
+        }
+    }
+    
+    if (paymentScheduleField) {
+        paymentScheduleField.addEventListener('blur', formatJSON);
+        
+        document.querySelector('#contractForm').addEventListener('submit', function(e) {
+            if (!validateJSON(paymentScheduleField.value)) {
+                e.preventDefault();
+                paymentScheduleField.focus();
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Applications - {{ campaign.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-badge {
+        min-width: 100px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Applications for: {{ campaign.title }}</h2>
+                <a href="{% url 'campaigns:detail' campaign.pk %}" class="btn btn-outline-primary">
+                    Back to Campaign
+                </a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if applications %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Influencer</th>
+                                <th>Proposal</th>
+                                <th>Rate</th>
+                                <th>Status</th>
+                                <th>Applied On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for application in applications %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if application.influencer.profile_picture %}
+                                                <img src="{{ application.influencer.profile_picture.url }}" 
+                                                     class="rounded-circle me-2" 
+                                                     width="40" height="40"
+                                                     alt="{{ application.influencer.get_full_name }}">
+                                            {% endif %}
+                                            <div>
+                                                <strong>{{ application.influencer.get_full_name }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ application.influencer.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ application.proposal|truncatewords:30 }}</td>
+                                    <td>${{ application.proposed_rate }}</td>
+                                    <td>
+                                        <span class="badge status-badge bg-{{ application.status|lower }}">
+                                            {{ application.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ application.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-primary dropdown-toggle"
+                                                    data-bs-toggle="dropdown">
+                                                Update Status
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                {% for status_code, status_label in status_choices %}
+                                                    <li>
+                                                        <form method="post" 
+                                                              action="{% url 'campaigns:update_application' application.pk %}">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="status" value="{{ status_code }}">
+                                                            <button type="submit" 
+                                                                    class="dropdown-item {% if application.status == status_code %}active{% endif %}">
+                                                                {{ status_label }}
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-info ms-1"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#applicationModal{{ application.pk }}">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Application Details Modal -->
+                                <div class="modal fade" id="applicationModal{{ application.pk }}">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Application Details</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <h6>Proposal</h6>
+                                                <p>{{ application.proposal }}</p>
+                                                
+                                                <h6>Portfolio Links</h6>
+                                                <ul>
+                                                    {% for link in application.portfolio_links %}
+                                                        <li><a href="{{ link }}" target="_blank">{{ link }}</a></li>
+                                                    {% endfor %}
+                                                </ul>
+
+                                                <h6>Notes</h6>
+                                                <p>{{ application.notes|default:"No additional notes" }}</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    Close
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No applications received yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any JavaScript for handling status updates via AJAX if needed
+    const statusForms = document.querySelectorAll('form[action*="update"]');
+    statusForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update the status badge
+                    const row = form.closest('tr');
+                    const statusBadge = row.querySelector('.status-badge');
+                    statusBadge.textContent = data.new_status;
+                    
+                    // Show success message
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-success alert-dismissible fade show';
+                    alert.innerHTML = `
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.querySelector('.container').insertBefore(alert, document.querySelector('.table-responsive'));
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+});
+</script>
+{% endblock %} 

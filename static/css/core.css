@@ -1,0 +1,70 @@
+/* Hero Section */
+.hero-section {
+    padding: 100px 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.hero-section h1 {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+}
+
+.hero-buttons {
+    margin-top: 2rem;
+}
+
+.hero-buttons .btn {
+    margin-right: 1rem;
+}
+
+/* Featured Campaigns */
+.featured-campaigns {
+    padding: 80px 0;
+}
+
+/* Top Influencers */
+.top-influencers {
+    padding: 80px 0;
+    background-color: #f8f9fa;
+}
+
+/* Newsletter Section */
+.newsletter-section {
+    padding: 80px 0;
+    background-color: #e9ecef;
+}
+
+.newsletter-content {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.newsletter-form {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Contact Form */
+.contact-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* FAQ Section */
+.faq-section {
+    padding: 80px 0;
+}
+
+.faq-category {
+    margin-bottom: 3rem;
+}
+
+.faq-item {
+    margin-bottom: 1.5rem;
+}
+
+.status-badge.bg-pending { background-color: #ffc107; }
+.status-badge.bg-approved { background-color: #28a745; }
+.status-badge.bg-rejected { background-color: #dc3545; }
+.status-badge.bg-withdrawn { background-color: #6c757d; }

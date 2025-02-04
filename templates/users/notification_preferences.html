@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notification Preferences - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Notification Preferences</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Notification Type</th>
+                                        <th class="text-center">Email</th>
+                                        <th class="text-center">Push</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for preference in preferences %}
+                                    <tr>
+                                        <td>
+                                            <label class="form-check-label">
+                                                {{ preference.get_notification_type_display }}
+                                            </label>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check d-flex justify-content-center">
+                                                <input type="checkbox" 
+                                                       class="form-check-input"
+                                                       name="email_{{ preference.notification_type }}"
+                                                       {% if preference.email_enabled %}checked{% endif %}>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check d-flex justify-content-center">
+                                                <input type="checkbox"
+                                                       class="form-check-input"
+                                                       name="push_{{ preference.notification_type }}"
+                                                       {% if preference.push_enabled %}checked{% endif %}>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-end mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Preferences
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">About Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <dt>Campaign Updates</dt>
+                        <dd>Updates about campaign status, applications, and changes.</dd>
+                        
+                        <dt>Contract Updates</dt>
+                        <dd>Notifications about contract creation, signing, and changes.</dd>
+                        
+                        <dt>Payment Updates</dt>
+                        <dd>Payment confirmations, reminders, and transaction updates.</dd>
+                        
+                        <dt>Messages</dt>
+                        <dd>New messages from brands or influencers.</dd>
+                        
+                        <dt>Reviews</dt>
+                        <dd>New reviews and feedback on your content or campaigns.</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contracts - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="contracts-container">
+    <div class="contracts-header">
+        <h1>Contracts</h1>
+        {% if user.user_type == 'seeker' %}
+            <a href="{% url 'contracts:manage_templates' %}" class="btn btn-outline-primary">
+                Manage Templates
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="contracts-grid">
+        {% for contract in contracts %}
+            <div class="contract-card">
+                <div class="contract-status {{ contract.status }}">
+                    {{ contract.get_status_display }}
+                </div>
+                
+                <div class="contract-info">
+                    <h3>{{ contract.campaign.title }}</h3>
+                    <div class="contract-meta">
+                        <span>
+                            <i class="fas fa-calendar"></i> 
+                            Created: {{ contract.created_at|date }}
+                        </span>
+                        {% if user.user_type == 'seeker' %}
+                            <span>
+                                <i class="fas fa-user"></i>
+                                Influencer: {{ contract.influencer.get_full_name }}
+                            </span>
+                        {% else %}
+                            <span>
+                                <i class="fas fa-building"></i>
+                                Brand: {{ contract.campaign.creator.company_name }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="signature-status">
+                        <div class="brand-signature">
+                            <span>Brand Signature:</span>
+                            {% if contract.signed_by_brand %}
+                                <i class="fas fa-check-circle text-success"></i>
+                                {{ contract.signed_by_brand|date }}
+                            {% else %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                                Pending
+                            {% endif %}
+                        </div>
+                        <div class="influencer-signature">
+                            <span>Influencer Signature:</span>
+                            {% if contract.signed_by_influencer %}
+                                <i class="fas fa-check-circle text-success"></i>
+                                {{ contract.signed_by_influencer|date }}
+                            {% else %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                                Pending
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="contract-actions">
+                    <a href="{% url 'contracts:detail' contract.id %}" class="btn btn-primary">
+                        View Details
+                    </a>
+                    {% if contract.status == 'active' %}
+                        <a href="{% url 'contracts:download' contract.id %}" class="btn btn-outline-secondary">
+                            Download PDF
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="no-contracts">
+                <img src="{% static 'images/no-contracts.svg' %}" alt="No contracts">
+                <h3>No Contracts Found</h3>
+                <p>
+                    {% if user.user_type == 'seeker' %}
+                        Create a campaign and select an influencer to generate a contract
+                    {% else %}
+                        Accept campaign offers to receive contracts
+                    {% endif %}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %} 

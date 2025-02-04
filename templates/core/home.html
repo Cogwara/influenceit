@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}InfluenceIt - Connect Brands with Influencers{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1>Connect with the Perfect Influencers for Your Brand</h1>
+                <p class="lead">
+                    InfluenceIt helps brands find and collaborate with influencers 
+                    to create authentic content and reach their target audience.
+                </p>
+                <div class="hero-buttons">
+                    <a href="{% url 'users:register' %}" class="btn btn-primary btn-lg">
+                        Get Started
+                    </a>
+                    <a href="{% url 'core:about' %}" class="btn btn-outline-primary btn-lg">
+                        Learn More
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="{% static 'images/hero-image.svg' %}" alt="InfluenceIt Platform" 
+                     class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="featured-campaigns">
+    <div class="container">
+        <h2>Featured Campaigns</h2>
+        <div class="row">
+            {% for campaign in featured_campaigns %}
+                <div class="col-md-4">
+                    {% include 'campaigns/includes/campaign_card.html' %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="top-influencers">
+    <div class="container">
+        <h2>Top Influencers</h2>
+        <div class="row">
+            {% for influencer in top_influencers %}
+                <div class="col-md-3">
+                    {% include 'users/includes/influencer_card.html' %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="newsletter-section">
+    <div class="container">
+        <div class="newsletter-content text-center">
+            <h2>Stay Updated</h2>
+            <p>Subscribe to our newsletter for the latest updates and insights.</p>
+            <form method="post" action="{% url 'core:newsletter_signup' %}" 
+                  class="newsletter-form">
+                {% csrf_token %}
+                {{ newsletter_form }}
+                <button type="submit" class="btn btn-primary">Subscribe</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %} 

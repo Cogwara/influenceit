@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Content Analytics - InfluenceIt{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+<style>
+    .stats-card {
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Time Period Filter -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="d-flex align-items-center">
+                        <label class="me-3">Time Period:</label>
+                        <select name="period" class="form-select me-3" style="width: auto;" onchange="this.form.submit()">
+                            <option value="7" {% if selected_period == '7' %}selected{% endif %}>Last 7 days</option>
+                            <option value="30" {% if selected_period == '30' %}selected{% endif %}>Last 30 days</option>
+                            <option value="90" {% if selected_period == '90' %}selected{% endif %}>Last 90 days</option>
+                            <option value="180" {% if selected_period == '180' %}selected{% endif %}>Last 6 months</option>
+                            <option value="365" {% if selected_period == '365' %}selected{% endif %}>Last year</option>
+                        </select>
+                        <span class="text-muted">
+                            {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}
+                        </span>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card stats-card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Content</h6>
+                    <h2 class="mb-0">{{ analytics.total_content }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stats-card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Views</h6>
+                    <h2 class="mb-0">{{ analytics.total_views|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stats-card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Likes</h6>
+                    <h2 class="mb-0">{{ analytics.total_likes|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stats-card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Shares</h6>
+                    <h2 class="mb-0">{{ analytics.total_shares|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stats-card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Comments</h6>
+                    <h2 class="mb-0">{{ analytics.total_comments|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card stats-card bg-secondary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Avg Engagement</h6>
+                    <h2 class="mb-0">{{ analytics.avg_engagement_rate|floatformat:2 }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Platform Performance -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Performance by Platform</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="platformChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Type Performance -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Performance by Content Type</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="contentTypeChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Row -->
+    <div class="row">
+        <!-- Top Performing Content -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Top Performing Content</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Platform</th>
+                                    <th>Views</th>
+                                    <th>Engagement</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for content in top_content %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'content:detail' content.pk %}">
+                                            {{ content.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ content.get_platform_display }}</td>
+                                    <td>{{ content.views|intcomma }}</td>
+                                    <td>{{ content.engagement_rate|floatformat:2 }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Content -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Content</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Type</th>
+                                    <th>Created</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for content in recent_content %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'content:detail' content.pk %}">
+                                            {{ content.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ content.get_content_type_display }}</td>
+                                    <td>{{ content.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ content.status }}">
+                                            {{ content.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+// Platform Performance Chart
+const platformCtx = document.getElementById('platformChart').getContext('2d');
+const platformChart = new Chart(platformCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for stat in platform_stats %}'{{ stat.platform }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Views',
+            data: [{% for stat in platform_stats %}{{ stat.total_views|default:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Content Type Performance Chart
+const typeCtx = document.getElementById('contentTypeChart').getContext('2d');
+const typeChart = new Chart(typeCtx, {
+    type: 'pie',
+    data: {
+        labels: [{% for stat in type_stats %}'{{ stat.content_type }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for stat in type_stats %}{{ stat.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(255, 206, 86, 0.5)',
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(153, 102, 255, 0.5)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'right',
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 

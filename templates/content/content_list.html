@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Content - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="content-header">
+        <h1>Content</h1>
+        {% if user.user_type == 'influencer' %}
+            <div class="header-actions">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown">
+                        Create Content
+                    </button>
+                    <ul class="dropdown-menu">
+                        {% for campaign in campaigns %}
+                            <li>
+                                <a class="dropdown-item" 
+                                   href="{% url 'content:create' campaign.id %}">
+                                    {{ campaign.title }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <select name="campaign" class="form-select">
+                    <option value="">All Campaigns</option>
+                    {% for campaign in campaigns %}
+                        <option value="{{ campaign.id }}" 
+                                {% if request.GET.campaign == campaign.id|stringformat:"s" %}
+                                    selected
+                                {% endif %}>
+                            {{ campaign.title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>
+                        Pending Review
+                    </option>
+                    <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>
+                        Approved
+                    </option>
+                    <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>
+                        Rejected
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+        {% for content in contents %}
+            <div class="content-card">
+                <div class="content-status {{ content.status }}">
+                    {{ content.get_status_display }}
+                </div>
+                
+                <div class="content-preview">
+                    {% if content.type == 'instagram' %}
+                        <i class="fab fa-instagram"></i>
+                    {% elif content.type == 'youtube' %}
+                        <i class="fab fa-youtube"></i>
+                    {% elif content.type == 'tiktok' %}
+                        <i class="fab fa-tiktok"></i>
+                    {% endif %}
+                    <a href="{{ content.url }}" target="_blank" class="content-link">
+                        View Content
+                    </a>
+                </div>
+                
+                <div class="content-info">
+                    <div class="campaign-info">
+                        <span class="badge bg-primary">{{ content.campaign.title }}</span>
+                        <span class="date">{{ content.created_at|date }}</span>
+                    </div>
+                    
+                    <div class="metrics-summary">
+                        {% if content.metrics %}
+                            <div class="metric">
+                                <span class="label">Engagement</span>
+                                <span class="value">{{ content.metrics.engagement_rate }}%</span>
+                            </div>
+                            <div class="metric">
+                                <span class="label">Impressions</span>
+                                <span class="value">{{ content.metrics.impressions }}</span>
+                            </div>
+                        {% else %}
+                            <span class="no-metrics">No metrics reported</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="content-actions">
+                    <a href="{% url 'content:detail' content.id %}" class="btn btn-outline-primary">
+                        View Details
+                    </a>
+                    {% if user == content.creator and content.status != 'approved' %}
+                        <a href="{% url 'content:update' content.id %}" class="btn btn-outline-secondary">
+                            Edit
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="no-content">
+                <img src="{% static 'images/no-content.svg' %}" alt="No content">
+                <h3>No Content Found</h3>
+                <p>
+                    {% if user.user_type == 'influencer' %}
+                        Start creating content for your campaigns
+                    {% else %}
+                        No content has been submitted yet
+                    {% endif %}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                            Previous
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} Campaigns - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Category Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Categories</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for cat in categories %}
+                            <a href="{% url 'campaigns:category' cat.slug %}" 
+                               class="list-group-item list-group-item-action {% if cat == category %}active{% endif %}">
+                                {{ cat.name }}
+                                <span class="badge bg-secondary float-end">
+                                    {{ cat.campaign_set.count }}
+                                </span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Filters -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Filter Options</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        <div class="mb-3">
+                            <label class="form-label">Budget Range</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       name="min_budget" 
+                                       placeholder="Min"
+                                       value="{{ request.GET.min_budget }}">
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       name="max_budget" 
+                                       placeholder="Max"
+                                       value="{{ request.GET.max_budget }}">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campaign Listings -->
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>{{ category.name }} Campaigns</h2>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" 
+                            type="button" 
+                            data-bs-toggle="dropdown">
+                        Sort By
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="?sort=newest">Newest First</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="?sort=budget_high">Highest Budget</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="?sort=budget_low">Lowest Budget</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if campaigns %}
+                <div class="row">
+                    {% for campaign in campaigns %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                {% if campaign.image %}
+                                    <img src="{{ campaign.image.url }}" 
+                                         class="card-img-top" 
+                                         alt="{{ campaign.title }}">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ campaign.title }}</h5>
+                                    <p class="card-text">{{ campaign.description|truncatewords:30 }}</p>
+                                    
+                                    <div class="mb-3">
+                                        <span class="badge bg-primary">{{ campaign.get_status_display }}</span>
+                                        <span class="badge bg-success">${{ campaign.budget }}</span>
+                                        {% for cat in campaign.categories.all %}
+                                            {% if cat != category %}
+                                                <span class="badge bg-info">{{ cat.name }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            Posted by {{ campaign.creator.get_full_name }}
+                                            <br>
+                                            {{ campaign.created_at|timesince }} ago
+                                        </small>
+                                        <a href="{% url 'campaigns:detail' campaign.pk %}" 
+                                           class="btn btn-outline-primary">
+                                            View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">&laquo; First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?page={{ page_obj.previous_page_number }}">
+                                        Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?page={{ page_obj.next_page_number }}">
+                                        Next
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?page={{ page_obj.paginator.num_pages }}">
+                                        Last &raquo;
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    No campaigns found in this category.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

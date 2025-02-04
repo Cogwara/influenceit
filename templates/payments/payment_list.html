@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payments - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="payments-container">
+    <div class="payments-header">
+        <h1>Payments</h1>
+        {% if user.user_type == 'seeker' %}
+            <a href="{% url 'payments:payment_methods' %}" class="btn btn-outline-primary">
+                Manage Payment Methods
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-card mb-4">
+        <form method="get" class="row g-3">
+            {{ filter_form }}
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{% url 'payments:list' %}" class="btn btn-outline-secondary">Clear Filters</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Payments List -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    {% if user.user_type == 'seeker' %}
+                        <th>Paid To</th>
+                    {% else %}
+                        <th>Received From</th>
+                    {% endif %}
+                    <th>Campaign</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.created_at|date }}</td>
+                        {% if user.user_type == 'seeker' %}
+                            <td>{{ payment.recipient.get_full_name }}</td>
+                        {% else %}
+                            <td>{{ payment.payer.get_full_name }}</td>
+                        {% endif %}
+                        <td>
+                            <a href="{% url 'campaigns:detail' payment.campaign.id %}">
+                                {{ payment.campaign.title }}
+                            </a>
+                        </td>
+                        <td>${{ payment.amount }}</td>
+                        <td>
+                            <span class="badge bg-{{ payment.status_color }}">
+                                {{ payment.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'payments:payment_detail' payment.id %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                View Details
+                            </a>
+                            {% if payment.status == 'completed' %}
+                                <a href="{% url 'payments:generate_invoice' payment.id %}" 
+                                   class="btn btn-sm btn-outline-secondary">
+                                    Download Invoice
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div class="no-payments">
+                                <img src="{% static 'images/no-payments.svg' %}" alt="No payments">
+                                <h3>No Payments Found</h3>
+                                <p>
+                                    {% if user.user_type == 'seeker' %}
+                                        Start a campaign to make payments to influencers
+                                    {% else %}
+                                        Complete campaigns to receive payments
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %} 

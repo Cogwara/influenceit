@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add Payment Method - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="add-payment-method-container">
+    <div class="card">
+        <div class="card-header">
+            <h2>Add Payment Method</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" id="payment-form">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="card-number" class="form-label">Card Number</label>
+                    {{ form.card_number }}
+                    {% if form.card_number.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.card_number.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="exp-month" class="form-label">Expiration Month</label>
+                        {{ form.exp_month }}
+                        {% if form.exp_month.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.exp_month.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="exp-year" class="form-label">Expiration Year</label>
+                        {{ form.exp_year }}
+                        {% if form.exp_year.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.exp_year.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cvc" class="form-label">CVC</label>
+                        {{ form.cvc }}
+                        {% if form.cvc.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.cvc.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Add Payment Method</button>
+                    <a href="{% url 'payments:payment_methods' %}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('payment-form');
+    
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        // Disable the submit button to prevent double submission
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        
+        // Submit the form
+        form.submit();
+    });
+});
+</script>
+{% endblock %} 

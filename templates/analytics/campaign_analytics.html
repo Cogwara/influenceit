@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ campaign.title }} Analytics - InfluenceIt{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="campaign-analytics">
+    <div class="analytics-header">
+        <h1>{{ campaign.title }} Analytics</h1>
+        <div class="campaign-meta">
+            <span class="status {{ campaign.status }}">
+                {{ campaign.get_status_display }}
+            </span>
+            <span class="date">
+                {{ campaign.start_date }} - {{ campaign.end_date }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="summary-metrics">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3>Total Content</h3>
+                    <div class="metric-value">{{ total_content }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3>Total Impressions</h3>
+                    <div class="metric-value">{{ total_impressions|intcomma }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3>Total Engagement</h3>
+                    <div class="metric-value">{{ total_engagement|intcomma }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3>Avg. Engagement Rate</h3>
+                    <div class="metric-value">{{ avg_engagement_rate|floatformat:2 }}%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Charts -->
+    <div class="performance-charts mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Performance Timeline</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Platform Performance</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="platformChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform Breakdown -->
+    <div class="platform-breakdown mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h3>Platform Metrics</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Platform</th>
+                                <th>Content Count</th>
+                                <th>Total Impressions</th>
+                                <th>Avg. Engagement Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for platform in platform_metrics %}
+                                <tr>
+                                    <td>
+                                        <i class="fab fa-{{ platform.type }}"></i>
+                                        {{ platform.get_type_display }}
+                                    </td>
+                                    <td>{{ platform.count }}</td>
+                                    <td>{{ platform.impressions|intcomma }}</td>
+                                    <td>{{ platform.engagement|floatformat:2 }}%</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Timeline Chart
+    const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+    new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: {{ timeline_data|map:'date'|safe }},
+            datasets: [{
+                label: 'Content Count',
+                data: {{ timeline_data|map:'content_count'|safe }},
+                borderColor: '#4e73df',
+                tension: 0.1
+            }, {
+                label: 'Impressions',
+                data: {{ timeline_data|map:'impressions'|safe }},
+                borderColor: '#1cc88a',
+                tension: 0.1,
+                yAxisID: 'y1'
+            }, {
+                label: 'Engagement Rate',
+                data: {{ timeline_data|map:'engagement'|safe }},
+                borderColor: '#36b9cc',
+                tension: 0.1,
+                yAxisID: 'y2'
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                },
+                y2: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+
+    // Platform Chart
+    const platformCtx = document.getElementById('platformChart').getContext('2d');
+    new Chart(platformCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ platform_metrics|map:'type'|safe }},
+            datasets: [{
+                label: 'Content Count',
+                data: {{ platform_metrics|map:'count'|safe }},
+                backgroundColor: [
+                    '#4e73df',
+                    '#1cc88a',
+                    '#36b9cc'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

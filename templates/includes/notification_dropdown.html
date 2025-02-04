@@ -1,0 +1,142 @@
+<div class="dropdown-menu notifications-dropdown" aria-labelledby="notificationsDropdown">
+    <div class="notifications-header">
+        <h6 class="dropdown-header">Notifications</h6>
+        {% if unread_count > 0 %}
+            <button class="btn btn-link btn-sm mark-all-read">
+                Mark all as read
+            </button>
+        {% endif %}
+    </div>
+    
+    <div class="notifications-list">
+        {% for notification in recent_notifications %}
+            <a class="dropdown-item notification-item {% if not notification.read_at %}unread{% endif %}"
+               href="{{ notification.url }}">
+                <div class="notification-icon">
+                    {% if notification.type == 'campaign' %}
+                        <i class="fas fa-bullhorn"></i>
+                    {% elif notification.type == 'contract' %}
+                        <i class="fas fa-file-signature"></i>
+                    {% elif notification.type == 'payment' %}
+                        <i class="fas fa-dollar-sign"></i>
+                    {% elif notification.type == 'content' %}
+                        <i class="fas fa-photo-video"></i>
+                    {% else %}
+                        <i class="fas fa-bell"></i>
+                    {% endif %}
+                </div>
+                <div class="notification-content">
+                    <div class="notification-message">
+                        {{ notification.message }}
+                    </div>
+                    <div class="notification-meta">
+                        {{ notification.created_at|timesince }} ago
+                    </div>
+                </div>
+            </a>
+        {% empty %}
+            <div class="dropdown-item no-notifications">
+                <p class="text-muted mb-0">No new notifications</p>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item text-center" href="{% url 'notifications:list' %}">
+        View All Notifications
+    </a>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.querySelector('.notifications-dropdown');
+    const markAllBtn = dropdown.querySelector('.mark-all-read');
+    
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            fetch('/notifications/mark-all-read/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update UI
+                    dropdown.querySelectorAll('.notification-item.unread')
+                           .forEach(item => item.classList.remove('unread'));
+                    
+                    // Update badge
+                    const badge = document.querySelector('.notifications-badge');
+                    if (badge) {
+                        badge.style.display = 'none';
+                    }
+                    
+                    // Remove mark all button
+                    markAllBtn.remove();
+                }
+            });
+        });
+    }
+    
+    // Real-time updates using WebSocket
+    const notificationsSocket = new WebSocket(
+        `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/notifications/`
+    );
+    
+    notificationsSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'notification') {
+            // Update notifications list
+            updateNotificationsList();
+            // Update badge count
+            updateUnreadCount();
+        }
+    };
+    
+    function updateNotificationsList() {
+        fetch('/notifications/recent/')
+            .then(response => response.json())
+            .then(data => {
+                const notificationsList = dropdown.querySelector('.notifications-list');
+                notificationsList.innerHTML = data.notifications.map(notification => `
+                    <a class="dropdown-item notification-item ${notification.read ? '' : 'unread'}"
+                       href="${notification.url}">
+                        <div class="notification-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-message">
+                                ${notification.message}
+                            </div>
+                            <div class="notification-meta">
+                                ${notification.created_at}
+                            </div>
+                        </div>
+                    </a>
+                `).join('') || `
+                    <div class="dropdown-item no-notifications">
+                        <p class="text-muted mb-0">No new notifications</p>
+                    </div>
+                `;
+            });
+    }
+    
+    function updateUnreadCount() {
+        fetch('/notifications/unread-count/')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.querySelector('.notifications-badge');
+                if (badge) {
+                    badge.textContent = data.count;
+                    badge.style.display = data.count > 0 ? '' : 'none';
+                }
+            });
+    }
+});
+</script> 

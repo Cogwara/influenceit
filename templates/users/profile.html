@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.get_full_name }} - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <img src="{{ profile_user.profile_picture.url }}" 
+                 alt="{{ profile_user.get_full_name }}"
+                 class="rounded-circle">
+        </div>
+        <div class="profile-info">
+            <h1>{{ profile_user.get_full_name }}</h1>
+            <p class="user-type">{{ profile_user.get_user_type_display }}</p>
+            {% if profile_user.is_verified %}
+                <span class="badge bg-success">Verified</span>
+            {% endif %}
+            
+            {% if user == profile_user %}
+                <div class="profile-actions">
+                    <a href="{% url 'users:edit_profile' %}" class="btn btn-primary">
+                        Edit Profile
+                    </a>
+                    {% if not user.is_verified %}
+                        <a href="{% url 'users:verify_account' %}" class="btn btn-outline-primary">
+                            Verify Account
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="profile-content">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>About</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if profile_user.bio %}
+                            <p>{{ profile_user.bio }}</p>
+                        {% else %}
+                            <p class="text-muted">No bio provided</p>
+                        {% endif %}
+                        
+                        <div class="profile-details">
+                            {% if profile_user.location %}
+                                <div class="detail-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>{{ profile_user.location }}</span>
+                                </div>
+                            {% endif %}
+                            
+                            {% if profile_user.website %}
+                                <div class="detail-item">
+                                    <i class="fas fa-globe"></i>
+                                    <a href="{{ profile_user.website }}" target="_blank">
+                                        Website
+                                    </a>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="detail-item">
+                                <i class="fas fa-calendar"></i>
+                                <span>Joined {{ profile_user.date_joined|date }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                {% if profile_user.user_type == 'influencer' %}
+                    <!-- Influencer specific content -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3>Social Media Presence</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="social-links">
+                                {% for platform, link in profile_user.social_links.items %}
+                                    <a href="{{ link }}" class="social-link" target="_blank">
+                                        <i class="fab fa-{{ platform }}"></i>
+                                        <span>{{ platform|title }}</span>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Audience Demographics</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="demographics-data">
+                                <!-- Add demographics visualization here -->
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Brand specific content -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Company Information</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="company-info">
+                                <div class="info-item">
+                                    <strong>Company Name:</strong>
+                                    <span>{{ profile_user.company_name }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Industry:</strong>
+                                    <span>{{ profile_user.industry }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Company Size:</strong>
+                                    <span>{{ profile_user.company_size }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Details - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="payment-detail-container">
+    <div class="card">
+        <div class="card-header">
+            <h2>Payment Details</h2>
+            {% if payment.status == 'completed' %}
+                <a href="{% url 'payments:generate_invoice' payment.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-download"></i> Download Invoice
+                </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="payment-info">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3>Payment Information</h3>
+                        <table class="table">
+                            <tr>
+                                <th>Payment ID:</th>
+                                <td>{{ payment.id }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    <span class="badge bg-{{ payment.status_color }}">
+                                        {{ payment.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Amount:</th>
+                                <td>${{ payment.amount }}</td>
+                            </tr>
+                            <tr>
+                                <th>Date:</th>
+                                <td>{{ payment.created_at }}</td>
+                            </tr>
+                            {% if payment.stripe_payment_intent_id %}
+                                <tr>
+                                    <th>Transaction ID:</th>
+                                    <td>{{ payment.stripe_payment_intent_id }}</td>
+                                </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h3>Campaign Details</h3>
+                        <table class="table">
+                            <tr>
+                                <th>Campaign:</th>
+                                <td>
+                                    <a href="{% url 'campaigns:detail' payment.campaign.id %}">
+                                        {{ payment.campaign.title }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>{% if user.user_type == 'seeker' %}Paid To:{% else %}Received From:{% endif %}</th>
+                                <td>
+                                    {% if user.user_type == 'seeker' %}
+                                        {{ payment.recipient.get_full_name }}
+                                    {% else %}
+                                        {{ payment.payer.get_full_name }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {% if payment.status == 'pending' and user.user_type == 'seeker' %}
+                <div class="payment-actions mt-4">
+                    <h3>Complete Payment</h3>
+                    <form method="post" action="{% url 'payments:process_payment' payment.campaign.id %}" 
+                          id="payment-form">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Select Payment Method</label>
+                            <select name="payment_method_id" class="form-select" required>
+                                {% for method in user.payment_methods.all %}
+                                    <option value="{{ method.id }}">
+                                        {{ method.card_brand }} ending in {{ method.card_last4 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Pay ${{ payment.amount }}
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

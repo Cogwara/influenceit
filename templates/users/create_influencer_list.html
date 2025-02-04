@@ -1,0 +1,13 @@
+<!-- filepath: /C:/Users/user/OneDrive/Documents/Project/influenceit/templates/users/create_influencer_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Create Influencer List{% endblock %}
+
+{% block content %}
+<h2>Create Influencer List</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Create List</button>
+</form>
+{% endblock %}

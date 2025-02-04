@@ -1,0 +1,13 @@
+<!-- filepath: /C:/Users/user/OneDrive/Documents/Project/influenceit/campaigns/templates/campaigns/create_campaign.html -->
+{% extends 'base.html' %}
+
+{% block title %}Create Campaign{% endblock %}
+
+{% block content %}
+<h2>Create Campaign</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Create Campaign</button>
+</form>
+{% endblock %}

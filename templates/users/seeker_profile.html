@@ -1,0 +1,44 @@
+<!-- filepath: /C:/Users/user/OneDrive/Documents/Project/influenceit/templates/users/seeker_profile.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<h2>{{ user.username }}'s Profile</h2>
+<p><strong>Brand/Agency Name:</strong> {{ profile.brand_name }}</p>
+{% if profile.logo %}
+    <img src="{{ profile.logo.url }}" alt="Logo" width="150" height="150">
+{% else %}
+    <p>No logo available.</p>
+{% endif %}
+<p><strong>Website:</strong> <a href="{{ profile.website }}">{{ profile.website }}</a></p>
+<h3>Social Media Links</h3>
+<ul>
+    {% for platform, link in profile.social_media_links.items %}
+        <li><a href="{{ link }}">{{ platform }}</a></li>
+    {% endfor %}
+</ul>
+<p><strong>Industry/Niche:</strong> {{ profile.industry }}</p>
+<p><strong>Target Market:</strong> {{ profile.target_market }}</p>
+<p><strong>Company Size:</strong> {{ profile.company_size }}</p>
+<p><strong>Primary Marketing Goals:</strong> {{ profile.primary_marketing_goals }}</p>
+<p><strong>Preferred Influencer Type:</strong> {{ profile.preferred_influencer_type }}</p>
+<p><strong>Campaign Budget Range:</strong> {{ profile.campaign_budget_range }}</p>
+<p><strong>Payment Model:</strong> {{ profile.payment_model }}</p>
+<h3>Team Members & Permissions</h3>
+<ul>
+    {% for member, role in profile.team_members.items %}
+        <li>{{ member }} - {{ role }}</li>
+    {% endfor %}
+</ul>
+<h3>Client Profiles</h3>
+<ul>
+    {% for client, details in profile.client_profiles.items %}
+        <li>{{ client }} - {{ details }}</li>
+    {% endfor %}
+</ul>
+<h3>Integration & Tracking Setup</h3>
+<p><strong>Social Media Accounts:</strong> {{ profile.social_media_accounts }}</p>
+<p><strong>UTM Links:</strong> {{ profile.utm_links }}</p>
+<p><strong>Tracking Pixels:</strong> {{ profile.tracking_pixels }}</p>
+{% endblock %}

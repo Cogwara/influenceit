@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Analytics Dashboard - InfluenceIt{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="analytics-dashboard">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {% if user.user_type == 'seeker' %}
+                                Total Spent
+                            {% else %}
+                                Total Earned
+                            {% endif %}
+                        </h5>
+                        <h2 class="metric-value">
+                            ${{ total_spent|default:total_earned|floatformat:2 }}
+                        </h2>
+                        <p class="metric-label">
+                            {% if user.user_type == 'seeker' %}
+                                Avg. Campaign Cost: ${{ avg_campaign_cost|floatformat:2 }}
+                            {% else %}
+                                Avg. Campaign Earnings: ${{ avg_campaign_earnings|floatformat:2 }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Campaigns</h5>
+                        <h2 class="metric-value">{{ total_campaigns }}</h2>
+                        <p class="metric-label">
+                            Active Campaigns: {{ active_campaigns }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Content</h5>
+                        <h2 class="metric-value">{{ total_content }}</h2>
+                        <p class="metric-label">
+                            Avg. Engagement: {{ avg_engagement_rate|floatformat:2 }}%
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Performance</h5>
+                        <div class="platform-breakdown">
+                            {% for platform in content_by_platform %}
+                                <div class="platform-metric">
+                                    <i class="fab fa-{{ platform.type }}"></i>
+                                    <span>{{ platform.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="analytics-charts mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Performance Over Time</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Content Distribution</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="platformChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="export-section mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h3>Export Analytics</h3>
+            </div>
+            <div class="card-body">
+                <form action="{% url 'analytics:export' %}" method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" name="start_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">End Date</label>
+                        <input type="date" name="end_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            Export Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Performance Chart
+    const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(performanceCtx, {
+        type: 'line',
+        data: {
+            labels: {{ daily_metrics.content|map:'date'|safe }},
+            datasets: [{
+                label: 'Content Count',
+                data: {{ daily_metrics.content|map:'content_count'|safe }},
+                borderColor: '#4e73df',
+                tension: 0.1
+            }, {
+                label: 'Engagement Rate',
+                data: {{ daily_metrics.content|map:'avg_engagement'|safe }},
+                borderColor: '#1cc88a',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Platform Distribution Chart
+    const platformCtx = document.getElementById('platformChart').getContext('2d');
+    new Chart(platformCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ content_by_platform|map:'type'|safe }},
+            datasets: [{
+                data: {{ content_by_platform|map:'count'|safe }},
+                backgroundColor: [
+                    '#4e73df',
+                    '#1cc88a',
+                    '#36b9cc',
+                    '#f6c23e'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

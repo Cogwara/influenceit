@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Messages - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="messaging-container">
+    <div class="row g-0">
+        <!-- Conversations List -->
+        <div class="col-md-4 conversations-list">
+            <div class="conversations-header">
+                <h2>Messages</h2>
+                <a href="{% url 'messaging:create' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> New Message
+                </a>
+            </div>
+
+            <div class="search-box">
+                <input type="text" class="form-control" id="conversationSearch" 
+                       placeholder="Search conversations...">
+            </div>
+
+            <div class="conversations">
+                {% for conversation in conversations %}
+                    {% with other_participant=conversation.get_other_participant.user %}
+                        <a href="{% url 'messaging:conversation_detail' conversation.id %}" 
+                           class="conversation-item {% if conversation.has_unread %}unread{% endif %}">
+                            <div class="avatar">
+                                <img src="{{ other_participant.profile_picture.url }}" 
+                                     alt="{{ other_participant.get_full_name }}">
+                                {% if other_participant.is_online %}
+                                    <span class="online-indicator"></span>
+                                {% endif %}
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-header">
+                                    <h4>{{ other_participant.get_full_name }}</h4>
+                                    {% with last_message=conversation.messages.last %}
+                                        {% if last_message %}
+                                            <span class="time">{{ last_message.timestamp|timesince }} ago</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                                <p class="last-message">
+                                    {% with last_message=conversation.messages.last %}
+                                        {% if last_message %}
+                                            {% if last_message.sender == request.user %}
+                                                You:
+                                            {% endif %}
+                                            {{ last_message.content|truncatechars:50 }}
+                                        {% else %}
+                                            No messages yet
+                                        {% endif %}
+                                    {% endwith %}
+                                </p>
+                            </div>
+                            {% if conversation.unread_count %}
+                                <span class="unread-badge">{{ conversation.unread_count }}</span>
+                            {% endif %}
+                        </a>
+                    {% endwith %}
+                {% empty %}
+                    <div class="no-conversations">
+                        <img src="{% static 'images/no-messages.svg' %}" alt="No messages">
+                        <h3>No Messages Yet</h3>
+                        <p>Start a conversation with someone!</p>
+                        <a href="{% url 'messaging:create' %}" class="btn btn-primary">
+                            Start New Conversation
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Selected Conversation -->
+        <div class="col-md-8 conversation-detail">
+            {% if selected_conversation %}
+                {% include 'messaging/conversation_detail.html' with conversation=selected_conversation %}
+            {% else %}
+                <div class="no-conversation-selected">
+                    <img src="{% static 'images/select-conversation.svg' %}" alt="Select a conversation">
+                    <h3>Select a Conversation</h3>
+                    <p>Choose a conversation from the list or start a new one</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('conversationSearch');
+    const conversationsContainer = document.querySelector('.conversations');
+    
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const query = this.value;
+            
+            fetch(`{% url 'messaging:search' %}?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    conversationsContainer.innerHTML = '';
+                    
+                    data.results.forEach(conv => {
+                        const conversationHtml = `
+                            <a href="/messaging/${conv.id}/" class="conversation-item">
+                                <div class="avatar">
+                                    <img src="${conv.avatar}" alt="${conv.name}">
+                                </div>
+                                <div class="conversation-info">
+                                    <div class="conversation-header">
+                                        <h4>${conv.name}</h4>
+                                    </div>
+                                    <p class="last-message">${conv.last_message}</p>
+                                </div>
+                            </a>
+                        `;
+                        conversationsContainer.innerHTML += conversationHtml;
+                    });
+                    
+                    if (data.results.length === 0) {
+                        conversationsContainer.innerHTML = `
+                            <div class="no-results">
+                                <p>No conversations found</p>
+                            </div>
+                        `;
+                    }
+                });
+        }, 300);
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Successful - InfluenceIt{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h2 class="card-title text-success mb-4">Payment Successful!</h2>
+                    <p class="card-text">
+                        Thank you for your payment. Your transaction has been completed successfully.
+                        A confirmation email has been sent to your registered email address.
+                    </p>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted">
+                            Transaction ID: <strong>{{ payment.transaction_id }}</strong><br>
+                            Amount Paid: <strong>${{ payment.amount }}</strong><br>
+                            Date: <strong>{{ payment.created_at|date:"F j, Y, g:i a" }}</strong>
+                        </p>
+                    </div>
+
+                    <div class="mt-4">
+                        {% if payment.contract %}
+                            <a href="{% url 'contracts:detail' payment.contract.pk %}" 
+                               class="btn btn-primary me-2">
+                                View Contract
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'payments:list' %}" class="btn btn-outline-primary">
+                            View All Payments
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">What's Next?</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="fas fa-envelope text-primary me-2"></i>
+                            Check your email for a detailed receipt
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-file-contract text-primary me-2"></i>
+                            Review your contract details
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-tasks text-primary me-2"></i>
+                            Track your campaign progress
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Support Information -->
+            <div class="alert alert-info mt-4">
+                <h6 class="alert-heading">Need Help?</h6>
+                <p class="mb-0">
+                    If you have any questions about your payment, please contact our support team at 
+                    <a href="mailto:support@influenceit.com">support@influenceit.com</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

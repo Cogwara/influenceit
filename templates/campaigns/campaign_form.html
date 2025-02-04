@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Edit Campaign - {{ form.instance.title }}
+    {% else %}
+        Create New Campaign
+    {% endif %}
+    - InfluenceIt
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <h2>
+                {% if form.instance.pk %}
+                    Edit Campaign
+                {% else %}
+                    Create New Campaign
+                {% endif %}
+            </h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                
+                <div class="form-section">
+                    <h3>Basic Information</h3>
+                    <div class="row">
+                        <div class="col-12">
+                            {{ form.title.label_tag }}
+                            {{ form.title }}
+                            {{ form.title.errors }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            {{ form.description.label_tag }}
+                            {{ form.description }}
+                            {{ form.description.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Campaign Details</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.budget.label_tag }}
+                            {{ form.budget }}
+                            {{ form.budget.errors }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.deadline.label_tag }}
+                            {{ form.deadline }}
+                            {{ form.deadline.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Requirements</h3>
+                    <div class="row">
+                        <div class="col-12">
+                            {{ form.requirements.label_tag }}
+                            {{ form.requirements }}
+                            {{ form.requirements.errors }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Platforms</h3>
+                    <div class="platforms-grid">
+                        {{ form.platforms }}
+                        {{ form.platforms.errors }}
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Deliverables</h3>
+                    <div id="deliverablesContainer">
+                        <!-- Dynamic deliverables form fields will be added here -->
+                    </div>
+                    <button type="button" class="btn btn-outline-primary" id="addDeliverable">
+                        <i class="fas fa-plus"></i> Add Deliverable
+                    </button>
+                </div>
+
+                <div class="form-section">
+                    <h3>Target Metrics</h3>
+                    <div id="metricsContainer">
+                        <!-- Dynamic metrics form fields will be added here -->
+                    </div>
+                    <button type="button" class="btn btn-outline-primary" id="addMetric">
+                        <i class="fas fa-plus"></i> Add Metric
+                    </button>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}
+                            Update Campaign
+                        {% else %}
+                            Create Campaign
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'campaigns:list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle deliverables
+    const deliverablesContainer = document.getElementById('deliverablesContainer');
+    const addDeliverableBtn = document.getElementById('addDeliverable');
+    let deliverableCount = 0;
+
+    function addDeliverableField() {
+        const fieldWrapper = document.createElement('div');
+        fieldWrapper.className = 'deliverable-field mb-3';
+        fieldWrapper.innerHTML = `
+            <div class="input-group">
+                <input type="text" class="form-control" name="deliverable_type_${deliverableCount}" 
+                       placeholder="Type (e.g., Post, Story, Video)">
+                <input type="text" class="form-control" name="deliverable_desc_${deliverableCount}" 
+                       placeholder="Description">
+                <button type="button" class="btn btn-outline-danger remove-field">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        deliverablesContainer.appendChild(fieldWrapper);
+        deliverableCount++;
+    }
+
+    addDeliverableBtn.addEventListener('click', addDeliverableField);
+    deliverablesContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-field')) {
+            e.target.closest('.deliverable-field').remove();
+        }
+    });
+
+    // Handle metrics
+    const metricsContainer = document.getElementById('metricsContainer');
+    const addMetricBtn = document.getElementById('addMetric');
+    let metricCount = 0;
+
+    function addMetricField() {
+        const fieldWrapper = document.createElement('div');
+        fieldWrapper.className = 'metric-field mb-3';
+        fieldWrapper.innerHTML = `
+            <div class="input-group">
+                <input type="text" class="form-control" name="metric_name_${metricCount}" 
+                       placeholder="Metric Name">
+                <input type="number" class="form-control" name="metric_value_${metricCount}" 
+                       placeholder="Target Value">
+                <button type="button" class="btn btn-outline-danger remove-field">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        metricsContainer.appendChild(fieldWrapper);
+        metricCount++;
+    }
+
+    addMetricBtn.addEventListener('click', addMetricField);
+    metricsContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-field')) {
+            e.target.closest('.metric-field').remove();
+        }
+    });
+
+    // Load existing data if editing
+    if ({{ form.instance.pk|default:0 }}) {
+        const deliverables = {{ form.instance.deliverables|safe|default:'{}' }};
+        const metrics = {{ form.instance.target_metrics|safe|default:'{}' }};
+
+        for (const [type, desc] of Object.entries(deliverables)) {
+            const fieldWrapper = document.createElement('div');
+            fieldWrapper.className = 'deliverable-field mb-3';
+            fieldWrapper.innerHTML = `
+                <div class="input-group">
+                    <input type="text" class="form-control" name="deliverable_type_${deliverableCount}" 
+                           value="${type}">
+                    <input type="text" class="form-control" name="deliverable_desc_${deliverableCount}" 
+                           value="${desc}">
+                    <button type="button" class="btn btn-outline-danger remove-field">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            deliverablesContainer.appendChild(fieldWrapper);
+            deliverableCount++;
+        }
+
+        for (const [name, value] of Object.entries(metrics)) {
+            const fieldWrapper = document.createElement('div');
+            fieldWrapper.className = 'metric-field mb-3';
+            fieldWrapper.innerHTML = `
+                <div class="input-group">
+                    <input type="text" class="form-control" name="metric_name_${metricCount}" 
+                           value="${name}">
+                    <input type="number" class="form-control" name="metric_value_${metricCount}" 
+                           value="${value}">
+                    <button type="button" class="btn btn-outline-danger remove-field">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            metricsContainer.appendChild(fieldWrapper);
+            metricCount++;
+        }
+    }
+});
+</script>
+{% endblock %} 
