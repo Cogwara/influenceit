@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>Trending Now</h1>
+            <p class="lead">Discover what's hot in the influencer marketing world</p>
+        </div>
+    </div>
+
+    <!-- Trending Influencers -->
+    <section class="mb-5">
+        <h2 class="mb-4">Trending Influencers</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for influencer in trending_influencers %}
+            <div class="col">
+                {% include "discovery/includes/influencer_card.html" with influencer=influencer %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No trending influencers at the moment.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Trending Campaigns -->
+    <section class="mb-5">
+        <h2 class="mb-4">Hot Campaigns</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for campaign in trending_campaigns %}
+            <div class="col">
+                {% include "discovery/includes/campaign_card.html" with campaign=campaign %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No trending campaigns at the moment.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Trending Categories -->
+    <section class="mb-5">
+        <h2 class="mb-4">Popular Categories</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for category in trending_categories %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        {% if category.icon %}
+                        <i class="{{ category.icon }} fa-2x mb-3"></i>
+                        {% endif %}
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        <p class="card-text small">{{ category.description|truncatewords:15 }}</p>
+                        <div class="text-muted small mb-3">
+                            {{ category.influencer_count }} Influencers
+                        </div>
+                        <a href="{% url 'discovery:category_detail' category.slug %}" 
+                           class="btn btn-outline-primary btn-sm">
+                            Explore
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Trending Topics -->
+    <section class="mb-5">
+        <h2 class="mb-4">Trending Topics</h2>
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    {% for topic in trending_topics %}
+                    <div class="col-md-4 mb-3">
+                        <div class="d-flex align-items-center">
+                            <span class="h5 mb-0 me-2">#{{ forloop.counter }}</span>
+                            <div>
+                                <h6 class="mb-0">{{ topic.name }}</h6>
+                                <small class="text-muted">{{ topic.mention_count }} mentions</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %} 

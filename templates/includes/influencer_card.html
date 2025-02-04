@@ -1,0 +1,38 @@
+<div class="card influencer-card mb-4">
+    <div class="card-body text-center">
+        <div class="influencer-avatar mb-3">
+            {% if influencer.profile_photo %}
+                <img src="{{ influencer.profile_photo.url }}" 
+                     alt="{{ influencer.user.get_full_name }}" 
+                     class="rounded-circle">
+            {% else %}
+                <img src="{% static 'images/default-avatar.jpg' %}" 
+                     alt="{{ influencer.user.get_full_name }}" 
+                     class="rounded-circle">
+            {% endif %}
+        </div>
+        <h5 class="card-title">{{ influencer.user.get_full_name }}</h5>
+        <p class="text-muted">@{{ influencer.user.username }}</p>
+        <div class="influencer-stats mb-3">
+            <div class="row">
+                <div class="col">
+                    <strong>{{ influencer.followers_count }}</strong>
+                    <div class="text-muted">Followers</div>
+                </div>
+                <div class="col">
+                    <strong>{{ influencer.campaigns_count }}</strong>
+                    <div class="text-muted">Campaigns</div>
+                </div>
+            </div>
+        </div>
+        <div class="influencer-categories mb-3">
+            {% for category in influencer.categories.all|slice:":3" %}
+                <span class="badge bg-light text-dark">{{ category.name }}</span>
+            {% endfor %}
+        </div>
+        <a href="{% url 'users:profile_view' influencer.user.username %}" 
+           class="btn btn-outline-primary btn-sm">
+            View Profile
+        </a>
+    </div>
+</div>

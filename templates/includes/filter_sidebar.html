@@ -1,0 +1,107 @@
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Filter Results</h5>
+        <form method="get" id="filterForm">
+            <!-- Search Query -->
+            <div class="mb-3">
+                <label class="form-label">Search</label>
+                <input type="text" 
+                       class="form-control" 
+                       name="q" 
+                       value="{{ request.GET.q }}"
+                       placeholder="Search...">
+            </div>
+
+            <!-- Categories -->
+            <div class="mb-3">
+                <label class="form-label">Categories</label>
+                <select class="form-select" name="category" multiple>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}"
+                            {% if category.id|stringformat:"i" in request.GET.category %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Niches -->
+            <div class="mb-3">
+                <label class="form-label">Niches</label>
+                <select class="form-select" name="niche" multiple>
+                    {% for niche in niches %}
+                    <option value="{{ niche.id }}"
+                            {% if niche.id|stringformat:"i" in request.GET.niche %}selected{% endif %}>
+                        {{ niche.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Follower Range -->
+            <div class="mb-3">
+                <label class="form-label">Follower Count</label>
+                <select class="form-select" name="followers">
+                    <option value="">Any</option>
+                    <option value="0-10000" {% if request.GET.followers == '0-10000' %}selected{% endif %}>
+                        0 - 10K
+                    </option>
+                    <option value="10000-50000" {% if request.GET.followers == '10000-50000' %}selected{% endif %}>
+                        10K - 50K
+                    </option>
+                    <option value="50000-100000" {% if request.GET.followers == '50000-100000' %}selected{% endif %}>
+                        50K - 100K
+                    </option>
+                    <option value="100000-500000" {% if request.GET.followers == '100000-500000' %}selected{% endif %}>
+                        100K - 500K
+                    </option>
+                    <option value="500000+" {% if request.GET.followers == '500000+' %}selected{% endif %}>
+                        500K+
+                    </option>
+                </select>
+            </div>
+
+            <!-- Engagement Rate -->
+            <div class="mb-3">
+                <label class="form-label">Engagement Rate</label>
+                <select class="form-select" name="engagement">
+                    <option value="">Any</option>
+                    <option value="0-1" {% if request.GET.engagement == '0-1' %}selected{% endif %}>
+                        0% - 1%
+                    </option>
+                    <option value="1-3" {% if request.GET.engagement == '1-3' %}selected{% endif %}>
+                        1% - 3%
+                    </option>
+                    <option value="3-5" {% if request.GET.engagement == '3-5' %}selected{% endif %}>
+                        3% - 5%
+                    </option>
+                    <option value="5+" {% if request.GET.engagement == '5+' %}selected{% endif %}>
+                        5%+
+                    </option>
+                </select>
+            </div>
+
+            <!-- Location -->
+            <div class="mb-3">
+                <label class="form-label">Location</label>
+                <input type="text" 
+                       class="form-control" 
+                       name="location" 
+                       value="{{ request.GET.location }}"
+                       placeholder="Enter location...">
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            <button type="button" class="btn btn-outline-secondary w-100 mt-2" id="resetFilters">
+                Reset Filters
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('resetFilters').addEventListener('click', function() {
+    document.getElementById('filterForm').reset();
+    document.getElementById('filterForm').submit();
+});
+</script> 

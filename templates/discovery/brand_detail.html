@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-4">
+                {% if brand.logo %}
+                <img src="{{ brand.logo.url }}" alt="{{ brand.company_name }} Logo" class="img-fluid rounded me-3" style="max-width: 100px;">
+                {% endif %}
+                <h1 class="mb-0">{{ brand.company_name }}</h1>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">About</h5>
+                    <p class="card-text">{{ brand.description }}</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5 class="card-title">Company Details</h5>
+                            <ul class="list-unstyled">
+                                {% if brand.website %}
+                                <li><strong>Website:</strong> <a href="{{ brand.website }}" target="_blank">{{ brand.website }}</a></li>
+                                {% endif %}
+                                {% if brand.industry %}
+                                <li><strong>Industry:</strong> {{ brand.industry }}</li>
+                                {% endif %}
+                                {% if brand.location %}
+                                <li><strong>Location:</strong> {{ brand.location }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="card-title">Contact Information</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Email:</strong> {{ brand.user.email }}</li>
+                                {% if brand.phone %}
+                                <li><strong>Phone:</strong> {{ brand.phone }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if brand.niches.all %}
+                    <h5 class="card-title mt-4">Target Niches</h5>
+                    <div class="mb-3">
+                        {% for niche in brand.niches.all %}
+                        <span class="badge bg-primary me-2">{{ niche.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if brand.active_campaigns.exists %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Active Campaigns</h5>
+                    <div class="list-group">
+                        {% for campaign in brand.active_campaigns.all %}
+                        <a href="{% url 'campaigns:detail' campaign.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ campaign.title }}</h6>
+                                <small>Ends: {{ campaign.end_date }}</small>
+                            </div>
+                            <p class="mb-1">{{ campaign.description|truncatewords:30 }}</p>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Add sidebar content here if needed -->
+            {% if user.is_authenticated and user.is_influencer %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Actions</h5>
+                    <!-- Add action buttons here -->
+                    <a href="#" class="btn btn-primary w-100 mb-2">Contact Brand</a>
+                    <a href="#" class="btn btn-outline-primary w-100">Save to List</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

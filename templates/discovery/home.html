@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Hero Section -->
+    <div class="jumbotron bg-light p-5 rounded mb-4">
+        <h1 class="display-4">Discover Influencers & Brands</h1>
+        <p class="lead">Connect with the perfect partners for your next campaign</p>
+        <form action="{% url 'discovery:search' %}" class="mt-4">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control form-control-lg" placeholder="Search influencers, brands, or campaigns...">
+                <button class="btn btn-primary" type="submit">Search</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Trending Influencers -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Trending Influencers</h2>
+            <a href="{% url 'discovery:trending' %}" class="btn btn-outline-primary">View All</a>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for influencer in trending_influencers %}
+            <div class="col">
+                <div class="card h-100">
+                    {% if influencer.profile_photo %}
+                    <img src="{{ influencer.profile_photo.url }}" class="card-img-top" alt="{{ influencer.user.get_full_name }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ influencer.user.get_full_name }}</h5>
+                        <p class="card-text">{{ influencer.bio|truncatewords:20 }}</p>
+                        <div class="d-flex justify-content-between">
+                            <span><i class="fas fa-users"></i> {{ influencer.followers_count }}</span>
+                            <span><i class="fas fa-heart"></i> {{ influencer.engagement_rate }}%</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'discovery:influencer_detail' influencer.user.username %}" class="btn btn-primary btn-sm w-100">View Profile</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Featured Campaigns -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Featured Campaigns</h2>
+            <a href="{% url 'discovery:campaign_list' %}" class="btn btn-outline-primary">View All</a>
+        </div>
+        <div class="row">
+            {% for campaign in featured_campaigns %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ campaign.title }}</h5>
+                        <p class="card-text">{{ campaign.description|truncatewords:30 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-primary">{{ campaign.get_campaign_type_display }}</span>
+                            <small class="text-muted">{{ campaign.end_date|timeuntil }} left</small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'discovery:campaign_detail' campaign.pk %}" class="btn btn-outline-primary btn-sm w-100">Learn More</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Browse Categories</h2>
+            <a href="{% url 'discovery:category_list' %}" class="btn btn-outline-primary">View All</a>
+        </div>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-4">
+            {% for category in categories %}
+            <div class="col">
+                <a href="{% url 'discovery:category_detail' category.slug %}" class="text-decoration-none">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            {% if category.icon %}
+                            <i class="{{ category.icon }} fa-2x mb-2"></i>
+                            {% endif %}
+                            <h5 class="card-title">{{ category.name }}</h5>
+                            <small class="text-muted">{{ category.niches.count }} niches</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %} 

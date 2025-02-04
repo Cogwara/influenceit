@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Active Campaigns</h1>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex justify-content-end">
+                <div class="dropdown me-2">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Sort By
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="?sort=recent">Most Recent</a></li>
+                        <li><a class="dropdown-item" href="?sort=budget">Budget: High to Low</a></li>
+                        <li><a class="dropdown-item" href="?sort=deadline">Deadline: Soonest</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="collapse mb-4" id="filterCollapse">
+        <div class="card">
+            <div class="card-body">
+                <form class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Campaign Type</label>
+                        <select class="form-select">
+                            <option value="">All Types</option>
+                            <option>Sponsored Post</option>
+                            <option>Brand Ambassador</option>
+                            <option>Product Review</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Budget Range</label>
+                        <select class="form-select">
+                            <option value="">Any Budget</option>
+                            <option>$0-$500</option>
+                            <option>$501-$1000</option>
+                            <option>$1001-$5000</option>
+                            <option>$5000+</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Category</label>
+                        <select class="form-select">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <button type="reset" class="btn btn-outline-secondary">Reset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Campaigns Grid -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for campaign in campaigns %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        {% if campaign.brand.logo %}
+                        <img src="{{ campaign.brand.logo.url }}" 
+                             class="rounded-circle me-2" 
+                             alt="{{ campaign.brand.company_name }}"
+                             style="width: 40px; height: 40px; object-fit: cover;">
+                        {% endif %}
+                        <div>
+                            <h5 class="card-title mb-0">{{ campaign.title }}</h5>
+                            <small class="text-muted">{{ campaign.brand.company_name }}</small>
+                        </div>
+                    </div>
+
+                    <p class="card-text">{{ campaign.description|truncatewords:30 }}</p>
+
+                    <div class="mb-3">
+                        <span class="badge bg-primary me-2">{{ campaign.get_campaign_type_display }}</span>
+                        {% if campaign.budget_range %}
+                        <span class="badge bg-success">{{ campaign.budget_range }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="small text-muted mb-3">
+                        <div><i class="fas fa-calendar me-2"></i>Deadline: {{ campaign.end_date|date:"M d, Y" }}</div>
+                        <div><i class="fas fa-map-marker-alt me-2"></i>{{ campaign.location|default:"Remote" }}</div>
+                    </div>
+
+                    {% if campaign.niches.all %}
+                    <div class="mb-3">
+                        {% for niche in campaign.niches.all|slice:":3" %}
+                        <span class="badge bg-secondary me-1">{{ niche.name }}</span>
+                        {% endfor %}
+                        {% if campaign.niches.count > 3 %}
+                        <span class="badge bg-secondary">+{{ campaign.niches.count|add:"-3" }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'discovery:campaign_detail' campaign.pk %}" 
+                           class="btn btn-primary">View Details</a>
+                        <small class="text-muted">{{ campaign.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">No active campaigns found.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if campaigns.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if campaigns.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ campaigns.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in campaigns.paginator.page_range %}
+            <li class="page-item {% if campaigns.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if campaigns.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ campaigns.next_page_number }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %} 

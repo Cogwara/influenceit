@@ -1,32 +1,85 @@
-body {
-    font-family: 'Roboto', sans-serif;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* Campaign Card Styles */
+.campaign-card {
+    transition: transform 0.2s;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-header {
-    background-color: #282c34;
-    color: white;
-    padding: 1rem;
-    text-align: center;
+.campaign-card:hover {
+    transform: translateY(-5px);
 }
 
-nav ul {
-    list-style: none;
-    padding: 0;
+.campaign-category {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
 }
 
-nav ul li {
-    display: inline;
-    margin: 0 1rem;
+.campaign-budget {
+    color: #28a745;
+    font-weight: 600;
 }
 
-nav ul li a {
-    color: white;
-    text-decoration: none;
+/* Influencer Card Styles */
+.influencer-card {
+    transition: transform 0.2s;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-main {
-    padding: 2rem;
+.influencer-card:hover {
+    transform: translateY(-5px);
+}
+
+.influencer-avatar img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.influencer-stats {
+    font-size: 0.9rem;
+}
+
+.influencer-categories .badge {
+    margin: 0 2px;
+    font-weight: normal;
+}
+
+/* Hero Section Styles */
+.hero-section {
+    padding: 80px 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.hero-buttons .btn {
+    margin: 0 10px 10px 0;
+}
+
+/* Newsletter Section Styles */
+.newsletter-section {
+    background: #f8f9fa;
+    padding: 60px 0;
+    margin-top: 40px;
+}
+
+.newsletter-form {
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.newsletter-form input {
+    border-radius: 20px;
+    padding: 10px 20px;
+}
+
+.newsletter-form button {
+    border-radius: 20px;
+    padding: 10px 30px;
 }

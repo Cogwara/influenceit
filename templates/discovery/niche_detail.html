@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Niche Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'discovery:category_list' %}">Categories</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'discovery:category_detail' niche.category.slug %}">{{ niche.category.name }}</a></li>
+                    <li class="breadcrumb-item active">{{ niche.name }}</li>
+                </ol>
+            </nav>
+            <h1 class="mb-2">{{ niche.name }}</h1>
+            <p class="lead">{{ niche.description }}</p>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Niche Statistics</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Influencers:</span>
+                        <span>{{ niche.influencer_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Active Campaigns:</span>
+                        <span>{{ niche.active_campaign_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Average Engagement:</span>
+                        <span>{{ niche.avg_engagement_rate }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Influencers Section -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Top Influencers</h2>
+            <a href="{% url 'discovery:filter' %}?niche={{ niche.id }}" class="btn btn-outline-primary">View All</a>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for influencer in top_influencers %}
+            <div class="col">
+                {% include "discovery/includes/influencer_card.html" with influencer=influencer %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No influencers found in this niche.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Active Campaigns Section -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Active Campaigns</h2>
+            <a href="{% url 'discovery:campaign_list' %}?niche={{ niche.id }}" class="btn btn-outline-primary">View All</a>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for campaign in active_campaigns %}
+            <div class="col">
+                {% include "discovery/includes/campaign_card.html" with campaign=campaign %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No active campaigns in this niche.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Related Niches Section -->
+    <section class="mb-5">
+        <h2 class="mb-4">Related Niches</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for related_niche in related_niches %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ related_niche.name }}</h5>
+                        <p class="card-text small">{{ related_niche.description|truncatewords:20 }}</p>
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>{{ related_niche.influencer_count }} Influencers</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'discovery:niche_detail' related_niche.slug %}" 
+                           class="btn btn-outline-primary btn-sm w-100">
+                            Explore
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %} 

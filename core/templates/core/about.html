@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="text-center mb-4">About Us</h1>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Our Mission</h2>
+                    <p class="card-text">
+                        We connect brands with influencers to create authentic and meaningful collaborations. 
+                        Our platform makes it easy for brands to find the right influencers for their campaigns, 
+                        and for influencers to discover exciting opportunities with brands they love.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">What We Do</h2>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h5>For Brands</h5>
+                            <ul>
+                                <li>Find relevant influencers</li>
+                                <li>Create and manage campaigns</li>
+                                <li>Track campaign performance</li>
+                                <li>Direct communication with influencers</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h5>For Influencers</h5>
+                            <ul>
+                                <li>Discover brand opportunities</li>
+                                <li>Showcase your portfolio</li>
+                                <li>Track your earnings</li>
+                                <li>Professional networking</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Why Choose Us</h2>
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <i class="fas fa-shield-alt fa-2x mb-2"></i>
+                            <h5>Secure Platform</h5>
+                            <p>Safe and secure transactions for all parties</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <h5>Growing Community</h5>
+                            <p>Join thousands of active users</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <i class="fas fa-headset fa-2x mb-2"></i>
+                            <h5>24/7 Support</h5>
+                            <p>We're here to help you succeed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body text-center">
+                    <h2 class="card-title">Ready to Get Started?</h2>
+                    <p class="card-text">
+                        Join our community today and start creating meaningful collaborations.
+                    </p>
+                    <a href="{% url 'users:register' %}" class="btn btn-primary btn-lg">Sign Up Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

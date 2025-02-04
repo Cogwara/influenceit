@@ -22,7 +22,7 @@ class CustomUser(AbstractUser):
     )
     email = models.EmailField(_('email address'), unique=True)
     phone_number = models.CharField(
-        max_length=15, 
+        max_length=15,
         blank=True,
         validators=[MinLengthValidator(10)]
     )
@@ -35,7 +35,8 @@ class CustomUser(AbstractUser):
     website = models.URLField(blank=True)
     date_joined = models.DateTimeField(default=timezone.now)
     is_verified = models.BooleanField(default=False)
-    notification_preferences = models.JSONField(default=dict)
+    verification_code = models.CharField(max_length=6, null=True, blank=True)
+    verification_code_created = models.DateTimeField(null=True, blank=True)
 
     # Brand/Business specific fields
     company_name = models.CharField(max_length=100, blank=True)
@@ -69,17 +70,21 @@ class CustomUser(AbstractUser):
             self.create_default_preferences()
 
     def create_default_preferences(self):
-        """Create default notification preferences for the user."""
-        from notifications.models import NotificationPreference
-        
-        # Create preferences individually
-        for notification_type, _ in NotificationPreference.NOTIFICATION_TYPES:
-            NotificationPreference.objects.create(
-                user=self,
-                notification_type=notification_type,
-                email_enabled=True,
-                push_enabled=True
-            )
+        """Create default notification preferences for new users."""
+        NotificationPreference.objects.create(
+            user=self,
+            email_notifications=True,
+            push_notifications=True,
+            new_campaign_notifications=True,
+            campaign_updates=True,
+            campaign_deadlines=True,
+            new_message_notifications=True,
+            message_replies=True,
+            new_follower_notifications=True,
+            profile_mentions=True,
+            platform_updates=True,
+            newsletter=True
+        )
 
     class Meta:
         verbose_name = 'User'
@@ -129,10 +134,12 @@ class SocialPlatform(models.Model):
 
 
 class InfluencerProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     bio = models.TextField(blank=True)
     niches = models.ManyToManyField(Niche, related_name='influencers')
-    platforms = models.ManyToManyField(SocialPlatform, related_name='influencers')
+    platforms = models.ManyToManyField(
+        SocialPlatform, related_name='influencers')
     full_name = models.CharField(max_length=255)
     profile_picture = models.ImageField(
         upload_to='profile_pictures/', blank=True, null=True)
@@ -191,8 +198,39 @@ class InfluencerList(models.Model):
 
 # Notifications App - Handle system notifications
 class Notification(models.Model):
-    recipient = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='user_notifications'
+    )
     type = models.CharField(max_length=50)
     content = models.JSONField()
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class BrandProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    company_name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    website = models.URLField(blank=True)
+    logo = models.ImageField(upload_to='brand_logos/', blank=True)
+    industry = models.CharField(max_length=100, blank=True)
+    location = models.CharField(max_length=255, blank=True)
+    niches = models.ManyToManyField('discovery.Niche', blank=True)
+    founded_year = models.IntegerField(null=True, blank=True)
+    company_size = models.CharField(max_length=50, blank=True)
+    verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.company_name
+
+    @property
+    def active_campaigns(self):
+        return self.campaign_set.filter(status='active')
+
+    class Meta:
+        ordering = ['-created_at']

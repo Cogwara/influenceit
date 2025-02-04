@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Search and Filter Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Discover Brands</h1>
+        </div>
+        <div class="col-md-4">
+            <form class="d-flex">
+                <input type="search" class="form-control me-2" placeholder="Search brands...">
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Brands Grid -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for brand in brands %}
+        <div class="col">
+            <div class="card h-100">
+                {% if brand.logo %}
+                <img src="{{ brand.logo.url }}" class="card-img-top p-3" alt="{{ brand.company_name }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ brand.company_name }}</h5>
+                    <p class="card-text">{{ brand.description|truncatewords:20 }}</p>
+                    
+                    {% if brand.industry %}
+                    <p class="mb-2"><i class="fas fa-industry me-2"></i>{{ brand.industry }}</p>
+                    {% endif %}
+                    
+                    {% if brand.location %}
+                    <p class="mb-2"><i class="fas fa-map-marker-alt me-2"></i>{{ brand.location }}</p>
+                    {% endif %}
+
+                    {% if brand.niches.all %}
+                    <div class="mb-3">
+                        {% for niche in brand.niches.all %}
+                        <span class="badge bg-secondary me-1">{{ niche.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'discovery:brand_detail' brand.user.username %}" 
+                           class="btn btn-primary">View Profile</a>
+                        {% if brand.active_campaigns.exists %}
+                        <span class="badge bg-success">
+                            {{ brand.active_campaigns.count }} Active Campaigns
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">No brands found.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if brands.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if brands.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ brands.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in brands.paginator.page_range %}
+            <li class="page-item {% if brands.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if brands.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ brands.next_page_number }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -13,4 +13,5 @@ urlpatterns = [
     path('content/', include('content.urls')),
     path('analytics/', include('analytics.urls')),
     path('notifications/', include('notifications.urls')),
+    path('discover/', include('discovery.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

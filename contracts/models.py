@@ -5,6 +5,8 @@ from campaigns.models import Campaign
 # Create your models here.
 
 # Contracts App - Handle agreements and terms
+
+
 class Contract(models.Model):
     STATUS_CHOICES = (
         ('draft', 'Draft'),
@@ -37,13 +39,13 @@ class Contract(models.Model):
     terms_and_conditions = models.TextField()
     deliverables = models.JSONField()
     payment_terms = models.JSONField()
-    
+
     # Dates
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     effective_date = models.DateField()
     expiry_date = models.DateField()
-    
+
     # Status and Amount
     status = models.CharField(
         max_length=20,
@@ -59,6 +61,8 @@ class Contract(models.Model):
     notes = models.TextField(blank=True)
     signed_by_brand = models.DateTimeField(null=True, blank=True)
     signed_by_influencer = models.DateTimeField(null=True, blank=True)
+
+    title = models.CharField(max_length=255)
 
     def __str__(self):
         return f"Contract #{self.contract_number}"
@@ -78,7 +82,8 @@ class Contract(models.Model):
     class Meta:
         ordering = ['-created_at']
 
+
 class ContractTemplate(models.Model):
-    creator = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)

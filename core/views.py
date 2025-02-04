@@ -9,6 +9,7 @@ from .forms import ContactForm, NewsletterForm
 from campaigns.models import Campaign
 from users.models import CustomUser
 
+
 class HomeView(TemplateView):
     template_name = 'core/home.html'
 
@@ -25,6 +26,7 @@ class HomeView(TemplateView):
         context['newsletter_form'] = NewsletterForm()
         return context
 
+
 class AboutView(TemplateView):
     template_name = 'core/about.html'
 
@@ -39,6 +41,7 @@ class AboutView(TemplateView):
         ).count()
         return context
 
+
 class ContactView(TemplateView):
     template_name = 'core/contact.html'
 
@@ -51,19 +54,22 @@ class ContactView(TemplateView):
         form = ContactForm(request.POST)
         if form.is_valid():
             message = form.save()
-            
+
             # Send email notification
             send_mail(
                 subject=f'New Contact Message: {message.subject}',
-                message=f'From: {message.name} ({message.email})\n\n{message.message}',
+                message=f'From: {message.name} ({message.email})\n\n{
+                    message.message}',
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[settings.CONTACT_EMAIL],
             )
-            
-            messages.success(request, 'Your message has been sent successfully!')
+
+            messages.success(
+                request, 'Your message has been sent successfully!')
             return redirect('core:contact')
-        
+
         return render(request, self.template_name, {'form': form})
+
 
 class FAQView(ListView):
     model = FAQ
@@ -75,11 +81,14 @@ class FAQView(ListView):
         context['categories'] = FAQ.CATEGORY_CHOICES
         return context
 
+
 class TermsView(TemplateView):
     template_name = 'core/terms.html'
 
+
 class PrivacyView(TemplateView):
     template_name = 'core/privacy.html'
+
 
 def newsletter_signup(request):
     if request.method == 'POST':
@@ -87,13 +96,20 @@ def newsletter_signup(request):
         if form.is_valid():
             email = form.cleaned_data['email']
             # Add email to newsletter service (e.g., Mailchimp)
-            messages.success(request, 'Thank you for subscribing to our newsletter!')
+            messages.success(
+                request, 'Thank you for subscribing to our newsletter!')
         else:
             messages.error(request, 'Please enter a valid email address.')
     return redirect('core:home')
 
+
 def handler404(request, exception):
     return render(request, 'core/404.html', status=404)
 
+
 def handler500(request):
-    return render(request, 'core/500.html', status=500) 
+    return render(request, 'core/500.html', status=500)
+
+
+def about_view(request):
+    return render(request, 'core/about.html')

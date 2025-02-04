@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h1 class="card-title">{{ campaign.title }}</h1>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        {% if campaign.brand.logo %}
+                        <img src="{{ campaign.brand.logo.url }}" alt="{{ campaign.brand.company_name }}" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                        {% endif %}
+                        <a href="{% url 'discovery:brand_detail' campaign.brand.id %}" class="text-decoration-none">
+                            {{ campaign.brand.company_name }}
+                        </a>
+                    </div>
+
+                    <div class="campaign-meta mb-4">
+                        <span class="badge bg-primary me-2">{{ campaign.get_campaign_type_display }}</span>
+                        <span class="text-muted">
+                            Posted: {{ campaign.created_at|date:"M d, Y" }} | 
+                            Deadline: {{ campaign.end_date|date:"M d, Y" }}
+                        </span>
+                    </div>
+
+                    <h5>Campaign Details</h5>
+                    <p class="card-text">{{ campaign.description }}</p>
+
+                    {% if campaign.requirements %}
+                    <h5 class="mt-4">Requirements</h5>
+                    <p class="card-text">{{ campaign.requirements }}</p>
+                    {% endif %}
+
+                    {% if campaign.compensation %}
+                    <h5 class="mt-4">Compensation</h5>
+                    <p class="card-text">{{ campaign.compensation }}</p>
+                    {% endif %}
+
+                    {% if campaign.niches.all %}
+                    <h5 class="mt-4">Target Niches</h5>
+                    <div class="mb-3">
+                        {% for niche in campaign.niches.all %}
+                        <span class="badge bg-secondary me-2">{{ niche.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Campaign Overview</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Status:</strong> 
+                            <span class="badge {% if campaign.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ campaign.get_status_display }}
+                            </span>
+                        </li>
+                        <li class="mb-2"><strong>Budget:</strong> {{ campaign.budget }}</li>
+                        <li class="mb-2"><strong>Duration:</strong> {{ campaign.duration }}</li>
+                        {% if campaign.location %}
+                        <li class="mb-2"><strong>Location:</strong> {{ campaign.location }}</li>
+                        {% endif %}
+                    </ul>
+
+                    {% if user.is_authenticated and user.is_influencer %}
+                        {% if not campaign.has_applied %}
+                        <button class="btn btn-primary w-100 mb-2">Apply Now</button>
+                        {% else %}
+                        <button class="btn btn-secondary w-100 mb-2" disabled>Already Applied</button>
+                        {% endif %}
+                        <button class="btn btn-outline-primary w-100">Save Campaign</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if campaign.brand.active_campaigns.exists %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">More from {{ campaign.brand.company_name }}</h5>
+                    <div class="list-group list-group-flush">
+                        {% for other_campaign in campaign.brand.active_campaigns %}
+                            {% if other_campaign != campaign %}
+                            <a href="{% url 'discovery:campaign_detail' other_campaign.pk %}" class="list-group-item list-group-item-action">
+                                {{ other_campaign.title }}
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

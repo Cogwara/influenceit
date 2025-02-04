@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Category Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center">
+                {% if category.icon %}
+                <i class="{{ category.icon }} fa-3x me-3"></i>
+                {% endif %}
+                <div>
+                    <h1 class="mb-2">{{ category.name }}</h1>
+                    <p class="lead mb-0">{{ category.description }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Category Stats</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Niches:</span>
+                        <span>{{ category.niches.count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Influencers:</span>
+                        <span>{{ category.influencer_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Active Campaigns:</span>
+                        <span>{{ category.active_campaign_count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Niches Section -->
+    <section class="mb-5">
+        <h2 class="mb-4">Niches in {{ category.name }}</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for niche in category.niches.all %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ niche.name }}</h5>
+                        <p class="card-text">{{ niche.description }}</p>
+                        <div class="d-flex justify-content-between text-muted">
+                            <span>{{ niche.influencer_count }} Influencers</span>
+                            <span>{{ niche.active_campaign_count }} Campaigns</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'discovery:niche_detail' niche.slug %}" 
+                           class="btn btn-outline-primary btn-sm w-100">
+                            Explore Niche
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Top Influencers Section -->
+    <section class="mb-5">
+        <h2 class="mb-4">Top Influencers in {{ category.name }}</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for influencer in top_influencers %}
+            <div class="col">
+                {% include "discovery/includes/influencer_card.html" with influencer=influencer %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No influencers found in this category.</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if top_influencers %}
+        <div class="text-center mt-4">
+            <a href="{% url 'discovery:filter' %}?category={{ category.id }}" 
+               class="btn btn-primary">
+                View All Influencers
+            </a>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Active Campaigns Section -->
+    <section class="mb-5">
+        <h2 class="mb-4">Active Campaigns in {{ category.name }}</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for campaign in active_campaigns %}
+            <div class="col">
+                {% include "discovery/includes/campaign_card.html" with campaign=campaign %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No active campaigns in this category.</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if active_campaigns %}
+        <div class="text-center mt-4">
+            <a href="{% url 'discovery:campaign_list' %}?category={{ category.id }}" 
+               class="btn btn-primary">
+                View All Campaigns
+            </a>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %} 

@@ -5,6 +5,8 @@ from contracts.models import Contract  # Import Contract from contracts app
 # Create your models here.
 
 # Content App - Handle content management
+
+
 class Content(models.Model):
     CONTENT_TYPE_CHOICES = (
         ('video', 'Video'),
@@ -104,8 +106,28 @@ class Content(models.Model):
             return (self.total_engagement / self.views) * 100
         return 0
 
+
 class ContentReview(models.Model):
-    content = models.ForeignKey(Content, on_delete=models.CASCADE)
-    reviewer = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)
-    feedback = models.TextField()
-    status = models.CharField(max_length=20)
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
+    )
+
+    content = models.ForeignKey('Content', on_delete=models.CASCADE)
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    rating = models.IntegerField()
+    feedback = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Review for {self.content} by {self.reviewer}"
+
+    class Meta:
+        ordering = ['-created_at']

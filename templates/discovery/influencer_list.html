@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Filter Sidebar -->
+        <div class="col-md-3">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <h5 class="card-title">Filter Influencers</h5>
+                    <form method="get">
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Influencer List -->
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Influencers</h2>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Sort By
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="?sort=followers">Followers</a></li>
+                        <li><a class="dropdown-item" href="?sort=engagement">Engagement Rate</a></li>
+                        <li><a class="dropdown-item" href="?sort=recent">Recently Active</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for influencer in influencers %}
+                <div class="col">
+                    <div class="card h-100">
+                        {% if influencer.profile_photo %}
+                        <img src="{{ influencer.profile_photo.url }}" class="card-img-top" alt="{{ influencer.user.get_full_name }}">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ influencer.user.get_full_name }}</h5>
+                            <p class="card-text">{{ influencer.bio|truncatewords:20 }}</p>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span><i class="fas fa-users"></i> {{ influencer.followers_count }}</span>
+                                <span><i class="fas fa-heart"></i> {{ influencer.engagement_rate }}%</span>
+                            </div>
+
+                            {% if influencer.niches.all %}
+                            <div class="mb-2">
+                                {% for niche in influencer.niches.all %}
+                                <span class="badge bg-secondary me-1">{{ niche.name }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'discovery:influencer_detail' influencer.user.username %}" 
+                                   class="btn btn-primary btn-sm flex-grow-1">View Profile</a>
+                                <button class="btn btn-outline-primary btn-sm quick-view-btn" 
+                                        data-id="{{ influencer.id }}"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#quickViewModal">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        No influencers found matching your criteria.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if influencers.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if influencers.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ influencers.previous_page_number }}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in influencers.paginator.page_range %}
+                    <li class="page-item {% if influencers.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if influencers.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ influencers.next_page_number }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick View Modal -->
+<div class="modal fade" id="quickViewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Influencer Quick View</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.quick-view-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const id = this.dataset.id;
+        fetch(`/discovery/api/quick-view/${id}/`)
+            .then(response => response.json())
+            .then(data => {
+                const modalBody = document.querySelector('#quickViewModal .modal-body');
+                modalBody.innerHTML = `
+                    <h4>${data.name}</h4>
+                    <p>${data.bio}</p>
+                    <!-- Add more fields as needed -->
+                `;
+            });
+    });
+});
+</script>
+{% endblock %} 

@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     'notifications.apps.NotificationsConfig',
     'messaging.apps.MessagingConfig',
     'discovery.apps.DiscoveryConfig',
+    'crispy_forms',
+    'crispy_bootstrap4',
 ]
 
 MIDDLEWARE = [
@@ -64,7 +66,7 @@ WSGI_APPLICATION = 'influenceit.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.dbase',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -127,3 +129,7 @@ STRIPE_WEBHOOK_SECRET = 'your_stripe_webhook_secret'
 
 # Set to True for production
 STRIPE_LIVE_MODE = False
+
+# Crispy Forms Settings
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
+CRISPY_TEMPLATE_PACK = "bootstrap4"

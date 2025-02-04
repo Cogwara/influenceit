@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>Recommended For You</h1>
+            <p class="lead">Personalized recommendations based on your preferences and activity</p>
+        </div>
+    </div>
+
+    <!-- Recommended Influencers -->
+    <section class="mb-5">
+        <h2 class="mb-4">Recommended Influencers</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for influencer in recommended_influencers %}
+            <div class="col">
+                {% include "discovery/includes/influencer_card.html" with influencer=influencer %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h5>No recommendations yet!</h5>
+                    <p>Follow some categories or interact with more influencers to get personalized recommendations.</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Recommended Campaigns -->
+    <section class="mb-5">
+        <h2 class="mb-4">Campaigns You Might Like</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for campaign in recommended_campaigns %}
+            <div class="col">
+                {% include "discovery/includes/campaign_card.html" with campaign=campaign %}
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No campaign recommendations available at the moment.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Categories You Might Like -->
+    <section class="mb-5">
+        <h2 class="mb-4">Categories You Might Like</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for category in recommended_categories %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        {% if category.icon %}
+                        <i class="{{ category.icon }} fa-2x mb-3"></i>
+                        {% endif %}
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        <p class="card-text small">{{ category.description|truncatewords:15 }}</p>
+                        <a href="{% url 'discovery:category_detail' category.slug %}" 
+                           class="btn btn-outline-primary btn-sm">
+                            Explore
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Preference Settings -->
+    <section class="mb-5">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Customize Your Recommendations</h5>
+                <p class="card-text">Select your interests to get better recommendations:</p>
+                <form method="post" action="{% url 'discovery:update_preferences' %}">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Preferred Categories</label>
+                            <select class="form-select" multiple name="preferred_categories">
+                                {% for category in all_categories %}
+                                <option value="{{ category.id }}" 
+                                        {% if category in user_preferences.categories %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Content Types</label>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="type_photos" name="content_types" value="photos">
+                                <label class="form-check-label" for="type_photos">Photos</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="type_videos" name="content_types" value="videos">
+                                <label class="form-check-label" for="type_videos">Videos</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="type_blogs" name="content_types" value="blogs">
+                                <label class="form-check-label" for="type_blogs">Blogs</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Update Preferences</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %} 

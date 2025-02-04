@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Notification Preferences</h2>
+
+                    {% if messages %}
+                    <div class="messages mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" id="notification-form">
+                        {% csrf_token %}
+                        
+                        <!-- General Notification Settings -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">General Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="email_notifications" name="email_notifications"
+                                           {% if notification_prefs.email_notifications %}checked{% endif %}>
+                                    <label class="form-check-label" for="email_notifications">
+                                        Email Notifications
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="push_notifications" name="push_notifications"
+                                           {% if notification_prefs.push_notifications %}checked{% endif %}>
+                                    <label class="form-check-label" for="push_notifications">
+                                        Push Notifications
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campaign Notifications -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Campaign Notifications</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="new_campaign_notifications" name="new_campaign_notifications"
+                                           {% if notification_prefs.new_campaign_notifications %}checked{% endif %}>
+                                    <label class="form-check-label" for="new_campaign_notifications">
+                                        New Campaign Alerts
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="campaign_updates" name="campaign_updates"
+                                           {% if notification_prefs.campaign_updates %}checked{% endif %}>
+                                    <label class="form-check-label" for="campaign_updates">
+                                        Campaign Updates
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="campaign_deadlines" name="campaign_deadlines"
+                                           {% if notification_prefs.campaign_deadlines %}checked{% endif %}>
+                                    <label class="form-check-label" for="campaign_deadlines">
+                                        Campaign Deadlines
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Message Notifications -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Message Notifications</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="new_message_notifications" name="new_message_notifications"
+                                           {% if notification_prefs.new_message_notifications %}checked{% endif %}>
+                                    <label class="form-check-label" for="new_message_notifications">
+                                        New Messages
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="message_replies" name="message_replies"
+                                           {% if notification_prefs.message_replies %}checked{% endif %}>
+                                    <label class="form-check-label" for="message_replies">
+                                        Message Replies
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Notifications -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Profile Notifications</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="new_follower_notifications" name="new_follower_notifications"
+                                           {% if notification_prefs.new_follower_notifications %}checked{% endif %}>
+                                    <label class="form-check-label" for="new_follower_notifications">
+                                        New Followers
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="profile_mentions" name="profile_mentions"
+                                           {% if notification_prefs.profile_mentions %}checked{% endif %}>
+                                    <label class="form-check-label" for="profile_mentions">
+                                        Profile Mentions
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Platform Updates -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Platform Updates</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="platform_updates" name="platform_updates"
+                                           {% if notification_prefs.platform_updates %}checked{% endif %}>
+                                    <label class="form-check-label" for="platform_updates">
+                                        Platform Updates
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="newsletter" name="newsletter"
+                                           {% if notification_prefs.newsletter %}checked{% endif %}>
+                                    <label class="form-check-label" for="newsletter">
+                                        Newsletter
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Update Preferences</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

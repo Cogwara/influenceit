@@ -1,0 +1,63 @@
+<div class="card h-100">
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+            {% if brand.logo %}
+            <img src="{{ brand.logo.url }}" 
+                 class="rounded-circle me-3" 
+                 alt="{{ brand.company_name }}"
+                 style="width: 60px; height: 60px; object-fit: cover;">
+            {% endif %}
+            <div>
+                <h5 class="card-title mb-1">{{ brand.company_name }}</h5>
+                {% if brand.industry %}
+                <span class="badge bg-secondary">{{ brand.industry }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <p class="card-text">{{ brand.description|truncatewords:30 }}</p>
+
+        {% if brand.niches.all %}
+        <div class="mb-3">
+            {% for niche in brand.niches.all|slice:":3" %}
+            <span class="badge bg-secondary me-1">{{ niche.name }}</span>
+            {% endfor %}
+            {% if brand.niches.count > 3 %}
+            <span class="badge bg-secondary">+{{ brand.niches.count|add:"-3" }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if brand.location %}
+        <p class="mb-2 small">
+            <i class="fas fa-map-marker-alt me-1"></i> {{ brand.location }}
+        </p>
+        {% endif %}
+
+        {% if brand.website %}
+        <p class="mb-2 small">
+            <i class="fas fa-globe me-1"></i> 
+            <a href="{{ brand.website }}" target="_blank">{{ brand.website }}</a>
+        </p>
+        {% endif %}
+
+        {% if brand.active_campaigns.exists %}
+        <div class="alert alert-success small mb-0">
+            <i class="fas fa-bullhorn me-1"></i> 
+            {{ brand.active_campaigns.count }} Active Campaign{{ brand.active_campaigns.count|pluralize }}
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="card-footer">
+        <div class="d-flex gap-2">
+            <a href="{% url 'discovery:brand_detail' brand.user.username %}" 
+               class="btn btn-primary flex-grow-1">View Profile</a>
+            <button class="btn btn-outline-primary save-brand" 
+                    data-id="{{ brand.id }}"
+                    title="Save to List">
+                <i class="fas fa-bookmark"></i>
+            </button>
+        </div>
+    </div>
+</div> 

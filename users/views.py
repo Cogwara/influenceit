@@ -1,282 +1,258 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import DetailView, UpdateView
+from django.contrib.auth.views import LoginView, LogoutView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.http import JsonResponse
-from .forms import CustomUserCreationForm, CustomUserChangeForm, InfluencerListForm, InfluencerProfileForm, SeekerProfileForm, CustomAuthenticationForm, ProfileUpdateForm, BrandProfileForm, VerificationForm, UserProfileForm
-from .models import CustomUser, InfluencerProfile, SeekerProfile, UserVerification
-from campaigns.models import Campaign
-from django.contrib.auth.views import (
-    LoginView, LogoutView, 
-    PasswordResetView, PasswordResetDoneView,
-    PasswordResetConfirmView, PasswordResetCompleteView
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.conf import settings
+from django.utils.crypto import get_random_string
+from django.utils import timezone
+from datetime import timedelta
+
+from .forms import (
+    UserRegistrationForm,
+    UserUpdateForm,
+    ProfileUpdateForm,
+    InfluencerProfileForm,
+    BrandProfileForm
 )
+from .models import CustomUser, InfluencerProfile, BrandProfile
 from notifications.models import NotificationPreference
-from django.db import transaction
 
 
-def signup(request):
+def register(request):
+    """Handle user registration for both influencers and brands"""
+    if request.user.is_authenticated:
+        return redirect('home')
+
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
+        form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            # Create an InfluencerProfile or SeekerProfile for the new user with default values
-            if user.user_type == 'influencer':
-                InfluencerProfile.objects.create(
-                    user=user,
-                    full_name='',
-                    profile_picture=None,
-                    bio='',
-                    website='',
-                    social_links={},
-                    followers=0,
-                    engagement_rate=0.0,
-                    audience_demographics={},
-                    audience_interests={},
-                    audience_authenticity_score=0.0,
-                    primary_niche='',
-                    content_types={},
-                    brand_collaboration_history={},
-                    preferred_payment_model='',
-                    rate_card={},
-                    availability='',
-                    post_reach=0,
-                    impressions=0,
-                    engagement_metrics={}
-                )
-            elif user.user_type == 'seeker':
-                SeekerProfile.objects.create(
-                    user=user,
-                    brand_name='',
-                    logo=None,
-                    website='',
-                    social_media_links={},
-                    industry='',
-                    target_market={},
-                    company_size='',
-                    primary_marketing_goals={},
-                    preferred_influencer_type={},
-                    campaign_budget_range='',
-                    payment_model='',
-                    team_members={},
-                    client_profiles={},
-                    social_media_accounts={},
-                    utm_links={},
-                    tracking_pixels={}
-                )
+            user = form.save(commit=False)
+            user.email = form.cleaned_data['email']
+            user.save()
+
+            # Create notification preferences
+            NotificationPreference.objects.create(
+                user=user,
+                email_notifications=True,
+                push_notifications=True
+            )
+
+            # Log the user in
             login(request, user)
-            # Pass the username argument
-            return redirect('users:profile', username=user.username)
+            messages.success(
+                request, 'Registration successful! Please complete your profile.')
+
+            # Redirect based on user type
+            if user.user_type == 'influencer':
+                return redirect('users:complete_influencer_profile')
+            else:
+                return redirect('users:complete_brand_profile')
     else:
-        form = CustomUserCreationForm()
-    return render(request, 'users/signup.html', {'form': form})
+        form = UserRegistrationForm()
+
+    return render(request, 'users/register.html', {'form': form})
+
+
+@login_required
+def complete_influencer_profile(request):
+    """Complete profile setup for influencers"""
+    if hasattr(request.user, 'influencerprofile'):
+        return redirect('users:profile')
+
+    if request.method == 'POST':
+        form = InfluencerProfileForm(request.POST, request.FILES)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            profile.user = request.user
+            profile.save()
+            form.save_m2m()  # Save many-to-many relationships
+            messages.success(
+                request, 'Your profile has been created successfully!')
+            return redirect('users:profile')
+    else:
+        form = InfluencerProfileForm()
+
+    return render(request, 'users/complete_influencer_profile.html', {'form': form})
+
+
+@login_required
+def complete_brand_profile(request):
+    """Complete profile setup for brands"""
+    if hasattr(request.user, 'brandprofile'):
+        return redirect('users:profile')
+
+    if request.method == 'POST':
+        form = BrandProfileForm(request.POST, request.FILES)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            profile.user = request.user
+            profile.save()
+            form.save_m2m()  # Save many-to-many relationships
+            messages.success(
+                request, 'Your brand profile has been created successfully!')
+            return redirect('users:profile')
+    else:
+        form = BrandProfileForm()
+
+    return render(request, 'users/complete_brand_profile.html', {'form': form})
+
+
+@login_required
+def profile(request):
+    """Display and update user profile"""
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+
+        # Choose the correct profile form based on user type
+        if request.user.user_type == 'influencer':
+            profile_form = InfluencerProfileForm(
+                request.POST,
+                request.FILES,
+                instance=request.user.influencerprofile
+            )
+        else:
+            profile_form = BrandProfileForm(
+                request.POST,
+                request.FILES,
+                instance=request.user.brandprofile
+            )
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(
+                request, 'Your profile has been updated successfully!')
+            return redirect('users:profile')
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        if request.user.user_type == 'influencer':
+            profile_form = InfluencerProfileForm(
+                instance=request.user.influencerprofile)
+        else:
+            profile_form = BrandProfileForm(instance=request.user.brandprofile)
+
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form
+    }
+    return render(request, 'users/profile.html', context)
 
 
 @login_required
 def profile_view(request, username):
+    """Public view of a user's profile"""
     user = get_object_or_404(CustomUser, username=username)
+
     if user.user_type == 'influencer':
         profile = get_object_or_404(InfluencerProfile, user=user)
-        return render(request, 'users/influencer_profile.html', {'user': user, 'profile': profile})
+        template = 'users/influencer_profile.html'
     else:
-        profile = get_object_or_404(SeekerProfile, user=user)
-        campaigns = Campaign.objects.filter(created_by=user)
-        return render(request, 'users/seeker_profile.html', {'user': user, 'profile': profile, 'campaigns': campaigns})
+        profile = get_object_or_404(BrandProfile, user=user)
+        template = 'users/brand_profile.html'
+
+    context = {
+        'profile_user': user,
+        'profile': profile
+    }
+    return render(request, template, context)
 
 
 @login_required
-def update_profile(request):
-    user = request.user
-    if user.user_type == 'influencer':
-        profile = get_object_or_404(InfluencerProfile, user=user)
-        profile_form_class = InfluencerProfileForm
-    else:
-        profile = get_object_or_404(SeekerProfile, user=user)
-        profile_form_class = SeekerProfileForm
-
+def follow_toggle(request, username):
+    """Handle following/unfollowing users"""
     if request.method == 'POST':
-        user_form = CustomUserChangeForm(request.POST, instance=user)
-        profile_form = profile_form_class(
-            request.POST, request.FILES, instance=profile)
-        if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
-            return redirect('users:profile', username=user.username)
-    else:
-        user_form = CustomUserChangeForm(instance=user)
-        profile_form = profile_form_class(instance=profile)
+        user_to_follow = get_object_or_404(CustomUser, username=username)
 
-    return render(request, 'users/update_profile.html', {'user_form': user_form, 'profile_form': profile_form})
+        if request.user == user_to_follow:
+            return JsonResponse({'error': 'You cannot follow yourself'}, status=400)
 
-
-@login_required
-def create_influencer_list(request):
-    if request.method == 'POST':
-        form = InfluencerListForm(request.POST)
-        if form.is_valid():
-            influencer_list = form.save(commit=False)
-            influencer_list.seeker = request.user.seekerprofile
-            influencer_list.save()
-            form.save_m2m()
-            return redirect('users:profile', username=request.user.username)
-    else:
-        form = InfluencerListForm()
-    return render(request, 'users/create_influencer_list.html', {'form': form})
-
-
-def login_view(request):
-    if request.method == 'POST':
-        form = CustomAuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                # Pass the username argument
-                return redirect('users:profile', username=user.username)
-    else:
-        form = CustomAuthenticationForm()
-    return render(request, 'users/login.html', {'form': form})
-
-
-@login_required
-def logout_view(request):
-    logout(request)
-    return redirect('index')
-
-
-def register(request):
-    if request.user.is_authenticated:
-        return redirect('core:home')
-        
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            messages.success(request, 'Account created successfully! Please log in.')
-            return redirect('users:login')
+        if request.user in user_to_follow.followers.all():
+            user_to_follow.followers.remove(request.user)
+            is_following = False
         else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = CustomUserCreationForm()
-    
-    return render(request, 'users/register.html', {'form': form})
+            user_to_follow.followers.add(request.user)
+            is_following = True
 
-
-class ProfileView(LoginRequiredMixin, DetailView):
-    model = CustomUser
-    template_name = 'users/profile.html'
-    context_object_name = 'profile_user'
-
-    def get_object(self):
-        return get_object_or_404(
-            CustomUser,
-            username=self.kwargs.get('username')
-        )
+        return JsonResponse({
+            'is_following': is_following,
+            'followers_count': user_to_follow.followers.count()
+        })
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
 @login_required
-def edit_profile(request):
+def settings(request):
+    """User settings page"""
+    notification_prefs, created = NotificationPreference.objects.get_or_create(
+        user=request.user
+    )
+
     if request.method == 'POST':
-        profile_form = ProfileUpdateForm(
-            request.POST,
-            request.FILES,
-            instance=request.user
-        )
-        if request.user.user_type == 'seeker':
-            specific_form = BrandProfileForm(
-                request.POST,
-                instance=request.user
-            )
-        else:
-            specific_form = InfluencerProfileForm(
-                request.POST,
-                instance=request.user
-            )
+        # Update each preference field directly
+        notification_prefs.email_notifications = request.POST.get(
+            'email_notifications') == 'on'
+        notification_prefs.push_notifications = request.POST.get(
+            'push_notifications') == 'on'
+        notification_prefs.new_campaign_notifications = request.POST.get(
+            'new_campaign_notifications') == 'on'
+        notification_prefs.campaign_updates = request.POST.get(
+            'campaign_updates') == 'on'
+        notification_prefs.campaign_deadlines = request.POST.get(
+            'campaign_deadlines') == 'on'
+        notification_prefs.new_message_notifications = request.POST.get(
+            'new_message_notifications') == 'on'
+        notification_prefs.message_replies = request.POST.get(
+            'message_replies') == 'on'
+        notification_prefs.new_follower_notifications = request.POST.get(
+            'new_follower_notifications') == 'on'
+        notification_prefs.profile_mentions = request.POST.get(
+            'profile_mentions') == 'on'
+        notification_prefs.platform_updates = request.POST.get(
+            'platform_updates') == 'on'
+        notification_prefs.newsletter = request.POST.get('newsletter') == 'on'
 
-        if profile_form.is_valid() and specific_form.is_valid():
-            profile_form.save()
-            specific_form.save()
-            messages.success(request, 'Profile updated successfully!')
-            return redirect('users:profile', username=request.user.username)
-    else:
-        profile_form = ProfileUpdateForm(instance=request.user)
-        if request.user.user_type == 'seeker':
-            specific_form = BrandProfileForm(instance=request.user)
-        else:
-            specific_form = InfluencerProfileForm(instance=request.user)
+        notification_prefs.save()
+        messages.success(
+            request, 'Your settings have been updated successfully!')
+        return redirect('users:settings')
 
-    return render(request, 'users/edit_profile.html', {
-        'profile_form': profile_form,
-        'specific_form': specific_form
+    return render(request, 'users/settings.html', {
+        'notification_prefs': notification_prefs
     })
 
 
-@login_required
-def verify_account(request):
-    try:
-        verification = request.user.verification
-    except UserVerification.DoesNotExist:
-        verification = None
+def search_users(request):
+    """Search for users (AJAX endpoint)"""
+    query = request.GET.get('q', '')
+    user_type = request.GET.get('type', 'all')
 
-    if request.method == 'POST':
-        if not verification:
-            form = VerificationForm(request.POST, request.FILES)
-            if form.is_valid():
-                verification = form.save(commit=False)
-                verification.user = request.user
-                verification.save()
-                messages.success(
-                    request,
-                    'Verification documents submitted successfully!'
-                )
-                return redirect('users:profile', username=request.user.username)
-        else:
-            messages.warning(
-                request,
-                'You have already submitted verification documents.'
-            )
-    else:
-        form = VerificationForm()
+    users = CustomUser.objects.filter(
+        Q(username__icontains=query) |
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query)
+    )
 
-    return render(request, 'users/verify_account.html', {
-        'form': form,
-        'verification': verification
-    })
+    if user_type != 'all':
+        users = users.filter(user_type=user_type)
 
+    users = users[:10]  # Limit results
 
-@login_required
-def update_social_links(request):
-    if request.method == 'POST':
-        user = request.user
-        social_links = request.POST.dict()
-        social_links.pop('csrfmiddlewaretoken', None)
-        
-        user.social_links = social_links
-        user.save()
-        
-        return JsonResponse({'status': 'success'})
-    
-    return JsonResponse({'status': 'error'}, status=400)
+    results = [{
+        'username': user.username,
+        'name': user.get_full_name(),
+        'profile_url': reverse('users:profile_view', args=[user.username]),
+        'avatar_url': user.get_avatar_url()
+    } for user in users]
 
-
-@login_required
-def update_demographics(request):
-    if request.method == 'POST':
-        user = request.user
-        demographics = request.POST.dict()
-        demographics.pop('csrfmiddlewaretoken', None)
-        
-        user.audience_demographics = demographics
-        user.save()
-        
-        return JsonResponse({'status': 'success'})
-    
-    return JsonResponse({'status': 'error'}, status=400)
+    return JsonResponse({'results': results})
 
 
 class CustomLoginView(LoginView):
@@ -284,39 +260,193 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
 
     def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        if next_url:
+            return next_url
         return reverse_lazy('core:home')
 
     def form_invalid(self, form):
-        messages.error(self.request, 'Invalid username or password')
+        messages.error(self.request, 'Invalid username or password.')
         return super().form_invalid(form)
+
+    def form_valid(self, form):
+        remember_me = self.request.POST.get('remember_me')
+        if not remember_me:
+            # Session expires when browser closes
+            self.request.session.set_expiry(0)
+
+        # Call parent class's form_valid() to complete login process
+        response = super().form_valid(form)
+        messages.success(self.request, f'Welcome back, {
+                         self.request.user.username}!')
+        return response
 
 
 class CustomLogoutView(LogoutView):
-    next_page = 'core:home'
+    next_page = reverse_lazy('core:home')
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            messages.info(request, 'You have been successfully logged out.')
+        response = super().dispatch(request, *args, **kwargs)
+        return response
 
 
 @login_required
-def profile(request):
+def edit_profile(request):
+    """Handle profile editing for both influencers and brands"""
     if request.method == 'POST':
-        form = ProfileUpdateForm(
-            request.POST,
-            request.FILES,
-            instance=request.user
-        )
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Your profile has been updated!')
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+
+        # Select the appropriate profile form based on user type
+        if request.user.user_type == 'influencer':
+            profile_form = InfluencerProfileForm(
+                request.POST,
+                request.FILES,
+                instance=request.user.influencerprofile
+            )
+        else:
+            profile_form = BrandProfileForm(
+                request.POST,
+                request.FILES,
+                instance=request.user.brandprofile
+            )
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile = profile_form.save(commit=False)
+
+            # Handle profile photo/logo upload
+            if 'profile_photo' in request.FILES:
+                if request.user.user_type == 'influencer':
+                    profile.profile_photo = request.FILES['profile_photo']
+                else:
+                    profile.logo = request.FILES['profile_photo']
+
+            profile.save()
+            profile_form.save_m2m()  # Save many-to-many relationships
+
+            messages.success(
+                request, 'Your profile has been updated successfully!')
             return redirect('users:profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
-        form = ProfileUpdateForm(instance=request.user)
-    
-    return render(request, 'users/profile.html', {'form': form})
+        user_form = UserUpdateForm(instance=request.user)
+
+        # Get the appropriate profile instance and form
+        if request.user.user_type == 'influencer':
+            profile_form = InfluencerProfileForm(
+                instance=request.user.influencerprofile)
+        else:
+            profile_form = BrandProfileForm(instance=request.user.brandprofile)
+
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'user_type': request.user.user_type
+    }
+
+    return render(request, 'users/edit_profile.html', context)
+
+
+@login_required
+def verify_account(request):
+    """Handle account verification process"""
+    user = request.user
+
+    # Check if user is already verified
+    if user.is_verified:
+        messages.info(request, 'Your account is already verified.')
+        return redirect('users:profile')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'request':
+            # Generate verification code
+            verification_code = get_random_string(
+                length=6, allowed_chars='0123456789')
+            user.verification_code = verification_code
+            user.verification_code_created = timezone.now()
+            user.save()
+
+            # Send verification email
+            context = {
+                'user': user,
+                'verification_code': verification_code,
+                'valid_hours': 24  # Code validity period
+            }
+
+            html_message = render_to_string(
+                'users/emails/verification_email.html', context)
+            plain_message = strip_tags(html_message)
+
+            send_mail(
+                'Verify Your Account',
+                plain_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+
+            messages.success(
+                request, 'Verification code has been sent to your email.')
+            return redirect('users:verify_account')
+
+        elif action == 'verify':
+            submitted_code = request.POST.get('verification_code')
+
+            # Check if verification code exists and is valid
+            if not user.verification_code:
+                messages.error(
+                    request, 'Please request a new verification code.')
+                return redirect('users:verify_account')
+
+            # Check if code has expired (24 hours)
+            if user.verification_code_created < timezone.now() - timedelta(hours=24):
+                messages.error(
+                    request, 'Verification code has expired. Please request a new one.')
+                return redirect('users:verify_account')
+
+            # Verify the code
+            if submitted_code == user.verification_code:
+                user.is_verified = True
+                user.verification_code = None
+                user.verification_code_created = None
+                user.save()
+
+                messages.success(
+                    request, 'Your account has been successfully verified!')
+                return redirect('users:profile')
+            else:
+                messages.error(
+                    request, 'Invalid verification code. Please try again.')
+
+    return render(request, 'users/verify_account.html', {
+        'has_active_code': bool(user.verification_code and
+                                user.verification_code_created > timezone.now() - timedelta(hours=24))
+    })
 
 
 class CustomPasswordResetView(PasswordResetView):
     template_name = 'users/password_reset.html'
-    email_template_name = 'users/password_reset_email.html'
+    email_template_name = 'users/emails/password_reset_email.html'
+    subject_template_name = 'users/emails/password_reset_subject.txt'
     success_url = reverse_lazy('users:password_reset_done')
+
+    def form_valid(self, form):
+        """Add success message and handle invalid email"""
+        email = form.cleaned_data.get('email')
+        users = self.get_users(email)
+        if not len(list(users)):
+            messages.error(
+                self.request, 'No account found with this email address.')
+            return self.form_invalid(form)
+        messages.success(
+            self.request, 'Password reset instructions have been sent to your email.')
+        return super().form_valid(form)
 
 
 class CustomPasswordResetDoneView(PasswordResetDoneView):
@@ -327,6 +457,11 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     template_name = 'users/password_reset_confirm.html'
     success_url = reverse_lazy('users:password_reset_complete')
 
+    def form_valid(self, form):
+        messages.success(
+            self.request, 'Your password has been successfully reset.')
+        return super().form_valid(form)
+
 
 class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = 'users/password_reset_complete.html'
@@ -334,43 +469,56 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
 
 @login_required
 def update_notification_preferences(request):
-    if request.method == 'POST':
-        try:
-            with transaction.atomic():
-                # Get all current preferences
-                current_preferences = list(NotificationPreference.objects.filter(user=request.user))
-                
-                # Create a list to store updated preferences
-                updated_preferences = []
-                
-                # Update each preference based on form data
-                for pref in current_preferences:
-                    email_enabled = request.POST.get(f'email_{pref.notification_type}') == 'on'
-                    push_enabled = request.POST.get(f'push_{pref.notification_type}') == 'on'
-                    
-                    # Create new preference object with updated values
-                    updated_pref = NotificationPreference(
-                        user=request.user,
-                        notification_type=pref.notification_type,
-                        email_enabled=email_enabled,
-                        push_enabled=push_enabled
-                    )
-                    updated_preferences.append(updated_pref)
-                
-                # Delete existing preferences
-                NotificationPreference.objects.filter(user=request.user).delete()
-                
-                # Create new preferences
-                NotificationPreference.objects.bulk_create(updated_preferences)
-                
-                messages.success(request, 'Notification preferences updated successfully!')
-        except Exception as e:
-            messages.error(request, f'Error updating preferences: {str(e)}')
-        
-        return redirect('users:notification_preferences')
+    """Handle updating user notification preferences"""
+    try:
+        # Get or create notification preferences for the user
+        notification_prefs, created = NotificationPreference.objects.get_or_create(
+            user=request.user
+        )
 
-    # Get current preferences for display
-    preferences = NotificationPreference.objects.filter(user=request.user)
-    return render(request, 'users/notification_preferences.html', {
-        'preferences': preferences
-    })
+        if request.method == 'POST':
+            # Update each preference field directly
+            notification_prefs.email_notifications = request.POST.get(
+                'email_notifications') == 'on'
+            notification_prefs.push_notifications = request.POST.get(
+                'push_notifications') == 'on'
+            notification_prefs.new_campaign_notifications = request.POST.get(
+                'new_campaign_notifications') == 'on'
+            notification_prefs.campaign_updates = request.POST.get(
+                'campaign_updates') == 'on'
+            notification_prefs.campaign_deadlines = request.POST.get(
+                'campaign_deadlines') == 'on'
+            notification_prefs.new_message_notifications = request.POST.get(
+                'new_message_notifications') == 'on'
+            notification_prefs.message_replies = request.POST.get(
+                'message_replies') == 'on'
+            notification_prefs.new_follower_notifications = request.POST.get(
+                'new_follower_notifications') == 'on'
+            notification_prefs.profile_mentions = request.POST.get(
+                'profile_mentions') == 'on'
+            notification_prefs.platform_updates = request.POST.get(
+                'platform_updates') == 'on'
+            notification_prefs.newsletter = request.POST.get(
+                'newsletter') == 'on'
+
+            notification_prefs.save()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success'})
+
+            messages.success(
+                request, 'Notification preferences updated successfully!')
+            return redirect('users:settings')
+
+        context = {
+            'notification_prefs': notification_prefs,
+        }
+        return render(request, 'users/notification_preferences.html', context)
+
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+        messages.error(
+            request, 'An error occurred while updating notification preferences.')
+        return redirect('users:settings')

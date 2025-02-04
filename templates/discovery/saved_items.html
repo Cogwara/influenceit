@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>Saved Items</h1>
+            <p class="lead">Your collection of saved influencers, brands, and campaigns</p>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#influencers">
+                Influencers ({{ saved_influencers.count }})
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#brands">
+                Brands ({{ saved_brands.count }})
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#campaigns">
+                Campaigns ({{ saved_campaigns.count }})
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Saved Influencers -->
+        <div class="tab-pane fade show active" id="influencers">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for saved in saved_influencers %}
+                <div class="col">
+                    {% include "discovery/includes/influencer_card.html" with influencer=saved.influencer %}
+                    <div class="text-end mt-2">
+                        <small class="text-muted">Saved {{ saved.created_at|timesince }} ago</small>
+                        <form method="post" action="{% url 'discovery:remove_saved' 'influencer' saved.influencer.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger ms-2">Remove</button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h5>No saved influencers</h5>
+                        <p>Start saving influencers to build your collection!</p>
+                        <a href="{% url 'discovery:influencer_list' %}" class="btn btn-primary">Browse Influencers</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Saved Brands -->
+        <div class="tab-pane fade" id="brands">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for saved in saved_brands %}
+                <div class="col">
+                    {% include "discovery/includes/brand_card.html" with brand=saved.brand %}
+                    <div class="text-end mt-2">
+                        <small class="text-muted">Saved {{ saved.created_at|timesince }} ago</small>
+                        <form method="post" action="{% url 'discovery:remove_saved' 'brand' saved.brand.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger ms-2">Remove</button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h5>No saved brands</h5>
+                        <p>Start saving brands to build your collection!</p>
+                        <a href="{% url 'discovery:brand_list' %}" class="btn btn-primary">Browse Brands</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Saved Campaigns -->
+        <div class="tab-pane fade" id="campaigns">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for saved in saved_campaigns %}
+                <div class="col">
+                    {% include "discovery/includes/campaign_card.html" with campaign=saved.campaign %}
+                    <div class="text-end mt-2">
+                        <small class="text-muted">Saved {{ saved.created_at|timesince }} ago</small>
+                        <form method="post" action="{% url 'discovery:remove_saved' 'campaign' saved.campaign.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger ms-2">Remove</button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h5>No saved campaigns</h5>
+                        <p>Start saving campaigns to build your collection!</p>
+                        <a href="{% url 'discovery:campaign_list' %}" class="btn btn-primary">Browse Campaigns</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
