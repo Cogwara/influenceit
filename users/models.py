@@ -13,14 +13,15 @@ class CustomUser(AbstractUser):
     USER_TYPE_CHOICES = (
         ('seeker', 'Brand/Business'),
         ('influencer', 'Influencer'),
+        ('brand', 'Brand'),
     )
 
     user_type = models.CharField(
-        max_length=10,
+        max_length=15,
         choices=USER_TYPE_CHOICES,
         default='seeker'
     )
-    email = models.EmailField(_('email address'), unique=True)
+    email = models.EmailField(unique=True)
     phone_number = models.CharField(
         max_length=15,
         blank=True,
@@ -62,29 +63,6 @@ class CustomUser(AbstractUser):
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
-
-    def save(self, *args, **kwargs):
-        creating = self._state.adding
-        super().save(*args, **kwargs)
-        if creating:
-            self.create_default_preferences()
-
-    def create_default_preferences(self):
-        """Create default notification preferences for new users."""
-        NotificationPreference.objects.create(
-            user=self,
-            email_notifications=True,
-            push_notifications=True,
-            new_campaign_notifications=True,
-            campaign_updates=True,
-            campaign_deadlines=True,
-            new_message_notifications=True,
-            message_replies=True,
-            new_follower_notifications=True,
-            profile_mentions=True,
-            platform_updates=True,
-            newsletter=True
-        )
 
     class Meta:
         verbose_name = 'User'
@@ -135,7 +113,10 @@ class SocialPlatform(models.Model):
 
 class InfluencerProfile(models.Model):
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='influencerprofile'
+    )
     bio = models.TextField(blank=True)
     niches = models.ManyToManyField(Niche, related_name='influencers')
     platforms = models.ManyToManyField(
@@ -159,12 +140,16 @@ class InfluencerProfile(models.Model):
     post_reach = models.IntegerField(default=0)
     impressions = models.IntegerField(default=0)
     engagement_metrics = models.JSONField(blank=True, default=dict)
-    rates = models.JSONField()
-    metrics = models.JSONField()
+    rates = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00
+    )
+    metrics = models.JSONField(default=dict, blank=True)
     portfolio = models.ManyToManyField('content.Content')
 
     def __str__(self):
-        return self.full_name
+        return f"Influencer Profile for {self.user.username}"
 
 
 class SeekerProfile(models.Model):
@@ -211,7 +196,10 @@ class Notification(models.Model):
 
 class BrandProfile(models.Model):
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='brandprofile'
+    )
     company_name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     website = models.URLField(blank=True)
@@ -226,7 +214,7 @@ class BrandProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.company_name
+        return f"Brand Profile for {self.user.username}"
 
     @property
     def active_campaigns(self):

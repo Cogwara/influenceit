@@ -3,6 +3,9 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm, Authenti
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from .models import CustomUser, InfluencerProfile, SeekerProfile, InfluencerList, UserVerification, BrandProfile
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -177,14 +180,14 @@ class UserProfileForm(forms.ModelForm):
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
     user_type = forms.ChoiceField(
-        choices=[('influencer', 'Influencer'), ('brand', 'Brand')],
-        widget=forms.RadioSelect,
-        required=True
+        choices=User.USER_TYPE_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
 
     class Meta:
-        model = CustomUser
-        fields = ['username', 'email', 'password1', 'password2', 'user_type']
+        model = User
+        fields = ['username', 'email', 'user_type', 'password1', 'password2']
 
     def save(self, commit=True):
         user = super().save(commit=False)

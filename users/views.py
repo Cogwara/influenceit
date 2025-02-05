@@ -14,6 +14,8 @@ from django.conf import settings
 from django.utils.crypto import get_random_string
 from django.utils import timezone
 from datetime import timedelta
+from django.db import IntegrityError
+from django.core.exceptions import ObjectDoesNotExist
 
 from .forms import (
     UserRegistrationForm,
@@ -29,23 +31,12 @@ from notifications.models import NotificationPreference
 def register(request):
     """Handle user registration for both influencers and brands"""
     if request.user.is_authenticated:
-        return redirect('home')
+        return redirect('core:home')
 
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.email = form.cleaned_data['email']
-            user.save()
-
-            # Create notification preferences
-            NotificationPreference.objects.create(
-                user=user,
-                email_notifications=True,
-                push_notifications=True
-            )
-
-            # Log the user in
+            user = form.save()  # Signals handle profile and preferences
             login(request, user)
             messages.success(
                 request, 'Registration successful! Please complete your profile.')
@@ -53,7 +44,7 @@ def register(request):
             # Redirect based on user type
             if user.user_type == 'influencer':
                 return redirect('users:complete_influencer_profile')
-            else:
+            elif user.user_type in ['brand', 'seeker']:
                 return redirect('users:complete_brand_profile')
     else:
         form = UserRegistrationForm()
@@ -522,3 +513,25 @@ def update_notification_preferences(request):
         messages.error(
             request, 'An error occurred while updating notification preferences.')
         return redirect('users:settings')
+
+
+@login_required
+def user_profile(request):
+    user = request.user
+    profile = None
+
+    try:
+        if user.user_type == 'influencer':
+            profile = user.influencerprofile
+        elif user.user_type in ['brand', 'seeker']:
+            profile = user.brandprofile
+    except ObjectDoesNotExist:
+        # Redirect to profile creation page
+        messages.error(
+            request, 'Profile not found. Please create your profile.')
+        if user.user_type == 'influencer':
+            return redirect('users:create_influencer_profile')
+        elif user.user_type in ['brand', 'seeker']:
+            return redirect('users:create_brand_profile')
+
+    return render(request, 'users/profile.html', {'profile': profile})

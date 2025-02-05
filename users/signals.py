@@ -1,30 +1,39 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
-from .models import CustomUser
+from django.conf import settings  # To get AUTH_USER_MODEL
+from .models import CustomUser, InfluencerProfile, BrandProfile
 from notifications.models import NotificationPreference
 from django.shortcuts import render, redirect
+import logging
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from notifications.models import NotificationPreference
+from .models import CustomUser
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
-@receiver(post_save, sender=CustomUser)
-def create_user_preferences(sender, instance, created, **kwargs):
-    """Create default notification preferences for new users."""
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_user_preferences_and_profiles(sender, instance, created, **kwargs):
+    """
+    Create NotificationPreferences and relevant profiles when a new user is created.
+    """
     if created:
-        # Create a single notification preference instance for the new user
-        NotificationPreference.objects.create(
-            user=instance,
-            email_notifications=True,
-            push_notifications=True,
-            new_campaign_notifications=True,
-            campaign_updates=True,
-            campaign_deadlines=True,
-            new_message_notifications=True,
-            message_replies=True,
-            new_follower_notifications=True,
-            profile_mentions=True,
-            platform_updates=True,
-            newsletter=True
-        )
+        logger.info(f"Creating NotificationPreferences and profiles for user: {
+                    instance.email}")
+        with transaction.atomic():
+            # Use lazy imports to prevent circular dependencies
+            from notifications.models import NotificationPreference
+            NotificationPreference.objects.get_or_create(user=instance)
+
+            if instance.user_type == 'influencer':
+                from users.models import InfluencerProfile
+                InfluencerProfile.objects.get_or_create(user=instance)
+            elif instance.user_type in ['brand', 'seeker']:
+                from users.models import BrandProfile
+                BrandProfile.objects.get_or_create(user=instance)
 
 
 def update_user_preferences(request, user_id):

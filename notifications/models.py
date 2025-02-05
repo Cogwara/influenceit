@@ -44,7 +44,7 @@ class NotificationPreference(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='notification_preferences'
+        related_name='notification_preference'
     )
     notification_type = models.CharField(
         max_length=10,
@@ -72,7 +72,7 @@ class NotificationPreference(models.Model):
     newsletter = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"Notification preferences for {self.user.username}"
+        return f"NotificationPreference for {self.user.email}"
 
     def update_preferences(self, data):
         """Update notification preferences from form data"""
@@ -86,21 +86,21 @@ class NotificationPreference(models.Model):
 def create_user_preferences(sender, instance, created, **kwargs):
     """Create default notification preferences for new users."""
     if created:
-        preferences_to_create = []
         existing_types = set(NotificationPreference.objects.filter(
             user=instance
         ).values_list('notification_type', flat=True))
 
-        for notification_type, _ in NotificationPreference.NOTIFICATION_TYPES:
-            if notification_type not in existing_types:
-                preferences_to_create.append(
-                    NotificationPreference(
-                        user=instance,
-                        notification_type=notification_type,
-                        email_notifications=True,
-                        push_notifications=True
-                    )
-                )
+        preferences_to_create = [
+            NotificationPreference(
+                user=instance,
+                notification_type=notification_type,
+                email_notifications=True,
+                push_notifications=True
+            )
+            for notification_type, _ in NotificationPreference.NOTIFICATION_TYPES
+            if notification_type not in existing_types
+        ]
 
         if preferences_to_create:
-            NotificationPreference.objects.bulk_create(preferences_to_create)
+            NotificationPreference.objects.bulk_create(
+                preferences_to_create, ignore_conflicts=True)

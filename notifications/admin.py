@@ -13,4 +13,4 @@ class NotificationAdmin(admin.ModelAdmin):
 @admin.register(NotificationPreference)
 class NotificationPreferenceAdmin(admin.ModelAdmin):
     list_display = ('user', 'email_notifications', 'push_notifications')
-    search_fields = ('user__username', 'user__email')
+    search_fields = ('user__email',)

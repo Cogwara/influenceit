@@ -1,11 +1,12 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
-from .models import CustomUser, InfluencerProfile, SeekerProfile, UserVerification
+from .models import CustomUser, InfluencerProfile, SeekerProfile, UserVerification, BrandProfile
 
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
+    model = CustomUser
     list_display = ('email', 'username', 'user_type', 'is_verified', 'date_joined', 'is_staff')
     list_filter = ('user_type', 'is_verified', 'is_staff', 'date_joined')
     search_fields = ('email', 'username', 'first_name', 'last_name')
@@ -57,3 +58,10 @@ class UserVerificationAdmin(admin.ModelAdmin):
         if obj.document_file:
             return format_html('<a href="{}" target="_blank">View Document</a>', obj.document_file.url)
         return "No document"
+
+
+@admin.register(BrandProfile)
+class BrandProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'company_name')
+    search_fields = ('user__username', 'company_name')
+    list_filter = ('company_name',)
