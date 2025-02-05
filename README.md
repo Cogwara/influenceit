@@ -114,7 +114,7 @@ The website simplifies influencer marketing by providing a centralized platform 
 
 2. **Install dependencies:**
    ```bash
-   npm install
+   pip install requirements.txt
    ```
 
 3. **Set up the database:**
@@ -124,7 +124,7 @@ The website simplifies influencer marketing by providing a centralized platform 
 
 4. **Run the development server:**
    ```bash
-   npm start
+   python mange.py runserver
    ```
 
 ---
